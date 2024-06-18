@@ -91,6 +91,37 @@ TEST(Lexer, BooleanOperators) {
     TEST_LEX(actual, expected)
 }
 
+TEST(Lexer, Keywords) {
+    auto actual = lex(
+            "define if else while return "
+            "u8 u16 u32 u64 i8 i16 i32 i64 "
+            "f32 f64 bool true false");
+
+    std::vector<Token> expected = {
+            {TokenType::Define, "define"},
+            {TokenType::If, "if"},
+            {TokenType::Else, "else"},
+            {TokenType::While, "while"},
+            {TokenType::Return, "return"},
+            {TokenType::U8, "u8"},
+            {TokenType::U16, "u16"},
+            {TokenType::U32, "u32"},
+            {TokenType::U64, "u64"},
+            {TokenType::I8, "i8"},
+            {TokenType::I16, "i16"},
+            {TokenType::I32, "i32"},
+            {TokenType::I64, "i64"},
+            {TokenType::F32, "f32"},
+            {TokenType::F64, "f64"},
+            {TokenType::Bool, "bool"},
+            {TokenType::True, "true"},
+            {TokenType::False, "false"},
+            {TokenType::EndOfFile},
+    };
+
+    TEST_LEX(actual, expected)
+}
+
 TEST(Lexer, Newline) {
     auto actual = lex("1\n2");
     std::vector<Token> expected = {

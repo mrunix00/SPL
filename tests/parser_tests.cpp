@@ -1,58 +1,79 @@
 #include <gtest/gtest.h>
 
 #include "ast.h"
+#include "parser.h"
 
 TEST(ParserTests, SimpleBinaryExpression) {
     const char *input = "1 + 2";
     auto expectedResult = new BinaryExpression(
-            new Node({TokenType::Number, "1"}),
-            new Node({TokenType::Number, "2"}),
-            {TokenType::Plus, "+"});
+            new Node({Number, "1"}),
+            new Node({Number, "2"}),
+            {Plus, "+"});
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
     delete expectedResult;
+    delete actualResult;
 }
 
 TEST(ParserTests, CompoundBinaryExpression) {
     const char *input = "1 + 2 * 3";
     auto expectedResult = new BinaryExpression(
-            new Node({TokenType::Number, "1"}),
+            new Node({Number, "1"}),
             new BinaryExpression(
-                    new Node({TokenType::Number, "2"}),
-                    new Node({TokenType::Number, "3"}),
-                    {TokenType::Multiply, "*"}),
-            {TokenType::Plus, "+"});
+                    new Node({Number, "2"}),
+                    new Node({Number, "3"}),
+                    {Multiply, "*"}),
+            {Plus, "+"});
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
     delete expectedResult;
+    delete actualResult;
 }
 
 TEST(ParserTests, Declaration) {
     const char *input = "define a : u32";
     auto expectedResult = new Declaration(
-            new Node({TokenType::Define, "u32"}),
-            Node({TokenType::Identifier, "a"}));
+            new Node({Define, "u32"}),
+            Node({Identifier, "a"}));
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
     delete expectedResult;
+    delete actualResult;
 }
 
 TEST(ParserTests, DeclarationWithInitialization) {
     const char *input = "define a : u32 = 42";
     auto expectedResult = new Declaration(
-            new Node({TokenType::Define, "u32"}),
-            Node({TokenType::Identifier, "a"}),
-            new Node({TokenType::Number, "42"}));
+            new Node({Define, "u32"}),
+            Node({Identifier, "a"}),
+            new Node({Number, "42"}));
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
     delete expectedResult;
+    delete actualResult;
 }
 
 TEST(ParserTests, FunctionDeclaration) {
     const char *input = "define max : function(x: i32, y: i32) -> i32";
     auto expectedResult = new Declaration(
             new FunctionDeclaration(
-                    new Node({TokenType::Define, "i32"}),
+                    new Node({Define, "i32"}),
                     {new Declaration(
-                             new Node({TokenType::Define, "i32"}),
-                             Node({TokenType::Identifier, "x"})),
+                             new Node({Define, "i32"}),
+                             Node({Identifier, "x"})),
                      new Declaration(
-                             new Node({TokenType::Define, "i32"}),
-                             Node({TokenType::Identifier, "y"}))}),
-            Node({TokenType::Identifier, "max"}));
+                             new Node({Define, "i32"}),
+                             Node({Identifier, "y"}))}),
+            Node({Identifier, "max"}));
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
     delete expectedResult;
+    delete actualResult;
 }
 
 TEST(ParserTests, FunctionDeclarationWithBody) {
@@ -61,21 +82,25 @@ TEST(ParserTests, FunctionDeclarationWithBody) {
                         "}";
     auto expectedResult = new Declaration(
             new FunctionDeclaration(
-                    new Node({TokenType::Define, "i32"}),
+                    new Node({Define, "i32"}),
                     {
                             new Declaration(
-                                    new Node({TokenType::Define, "i32"}),
-                                    Node({TokenType::Identifier, "x"})),
+                                    new Node({Define, "i32"}),
+                                    Node({Identifier, "x"})),
                             new Declaration(
-                                    new Node({TokenType::Define, "i32"}),
-                                    Node({TokenType::Identifier, "y"})),
+                                    new Node({Define, "i32"}),
+                                    Node({Identifier, "y"})),
                     }),
-            Node({TokenType::Identifier, "max"}),
+            Node({Identifier, "max"}),
             new ScopedBody({
                     new ReturnStatement(new BinaryExpression(
-                            new Node({TokenType::Identifier, "x"}),
-                            new Node({TokenType::Identifier, "y"}),
-                            {TokenType::Plus, "+"})),
+                            new Node({Identifier, "x"}),
+                            new Node({Identifier, "y"}),
+                            {Plus, "+"})),
             }));
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
     delete expectedResult;
+    delete actualResult;
 }

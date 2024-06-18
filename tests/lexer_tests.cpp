@@ -7,10 +7,7 @@ static inline std::vector<Token> lex(const char *input) {
     auto buffer = yy_scan_string(input);
     while (true) {
         auto token = yylex();
-        tokens.push_back({
-                static_cast<TokenType>(token),
-                yytext,
-        });
+        tokens.push_back({token, yytext});
         if (token == 0)
             break;
     }
@@ -27,17 +24,15 @@ static inline std::vector<Token> lex(const char *input) {
 
 TEST(Lexer, EmptyString) {
     auto actual = lex("");
-    std::vector<Token> expected = {
-            {TokenType::EndOfFile},
-    };
+    std::vector<Token> expected = {{YYEOF}};
     TEST_LEX(actual, expected)
 }
 
 TEST(Lexer, Number) {
     auto actual = lex("42");
     std::vector<Token> expected = {
-            {TokenType::Number, "42"},
-            {TokenType::EndOfFile},
+            {Number, "42"},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -45,8 +40,8 @@ TEST(Lexer, Number) {
 TEST(Lexer, Identifier) {
     auto actual = lex("foo");
     std::vector<Token> expected = {
-            {TokenType::Identifier, "foo"},
-            {TokenType::EndOfFile},
+            {Identifier, "foo"},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -54,8 +49,8 @@ TEST(Lexer, Identifier) {
 TEST(Lexer, String) {
     auto actual = lex("\"foo\"");
     std::vector<Token> expected = {
-            {TokenType::String, "\"foo\""},
-            {TokenType::EndOfFile},
+            {String, "\"foo\""},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -63,13 +58,13 @@ TEST(Lexer, String) {
 TEST(Lexer, ArithmeticOperators) {
     auto actual = lex("+-*/%=");
     std::vector<Token> expected = {
-            {TokenType::Plus, "+"},
-            {TokenType::Minus, "-"},
-            {TokenType::Multiply, "*"},
-            {TokenType::Divide, "/"},
-            {TokenType::Modulo, "%"},
-            {TokenType::Assign, "="},
-            {TokenType::EndOfFile},
+            {Plus, "+"},
+            {Minus, "-"},
+            {Multiply, "*"},
+            {Divide, "/"},
+            {Modulo, "%"},
+            {Assign, "="},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -77,16 +72,16 @@ TEST(Lexer, ArithmeticOperators) {
 TEST(Lexer, BooleanOperators) {
     auto actual = lex("== != < <= > >= && || !");
     std::vector<Token> expected = {
-            {TokenType::Equal, "=="},
-            {TokenType::NotEqual, "!="},
-            {TokenType::Less, "<"},
-            {TokenType::LessEqual, "<="},
-            {TokenType::Greater, ">"},
-            {TokenType::GreaterEqual, ">="},
-            {TokenType::And, "&&"},
-            {TokenType::Or, "||"},
-            {TokenType::Not, "!"},
-            {TokenType::EndOfFile},
+            {Equal, "=="},
+            {NotEqual, "!="},
+            {Less, "<"},
+            {LessEqual, "<="},
+            {Greater, ">"},
+            {GreaterEqual, ">="},
+            {And, "&&"},
+            {Or, "||"},
+            {Not, "!"},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -98,25 +93,25 @@ TEST(Lexer, Keywords) {
             "f32 f64 bool true false");
 
     std::vector<Token> expected = {
-            {TokenType::Define, "define"},
-            {TokenType::If, "if"},
-            {TokenType::Else, "else"},
-            {TokenType::While, "while"},
-            {TokenType::Return, "return"},
-            {TokenType::U8, "u8"},
-            {TokenType::U16, "u16"},
-            {TokenType::U32, "u32"},
-            {TokenType::U64, "u64"},
-            {TokenType::I8, "i8"},
-            {TokenType::I16, "i16"},
-            {TokenType::I32, "i32"},
-            {TokenType::I64, "i64"},
-            {TokenType::F32, "f32"},
-            {TokenType::F64, "f64"},
-            {TokenType::Bool, "bool"},
-            {TokenType::True, "true"},
-            {TokenType::False, "false"},
-            {TokenType::EndOfFile},
+            {Define, "define"},
+            {If, "if"},
+            {Else, "else"},
+            {While, "while"},
+            {Return, "return"},
+            {U8, "u8"},
+            {U16, "u16"},
+            {U32, "u32"},
+            {U64, "u64"},
+            {I8, "i8"},
+            {I16, "i16"},
+            {I32, "i32"},
+            {I64, "i64"},
+            {F32, "f32"},
+            {F64, "f64"},
+            {Bool, "bool"},
+            {True, "true"},
+            {False, "false"},
+            {YYEOF},
     };
 
     TEST_LEX(actual, expected)
@@ -125,9 +120,9 @@ TEST(Lexer, Keywords) {
 TEST(Lexer, Newline) {
     auto actual = lex("1\n2");
     std::vector<Token> expected = {
-            {TokenType::Number, "1"},
-            {TokenType::Number, "2"},
-            {TokenType::EndOfFile},
+            {Number, "1"},
+            {Number, "2"},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -135,9 +130,9 @@ TEST(Lexer, Newline) {
 TEST(Lexer, Whitespace) {
     auto actual = lex("1 2");
     std::vector<Token> expected = {
-            {TokenType::Number, "1"},
-            {TokenType::Number, "2"},
-            {TokenType::EndOfFile},
+            {Number, "1"},
+            {Number, "2"},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -145,9 +140,9 @@ TEST(Lexer, Whitespace) {
 TEST(Lexer, Comments) {
     auto actual = lex("1 // foo\n2");
     std::vector<Token> expected = {
-            {TokenType::Number, "1"},
-            {TokenType::Number, "2"},
-            {TokenType::EndOfFile},
+            {Number, "1"},
+            {Number, "2"},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }
@@ -155,9 +150,9 @@ TEST(Lexer, Comments) {
 TEST(Lexer, MultiLineComments) {
     auto actual = lex("1 /* foo\nbar */ 2");
     std::vector<Token> expected = {
-            {TokenType::Number, "1"},
-            {TokenType::Number, "2"},
-            {TokenType::EndOfFile},
+            {Number, "1"},
+            {Number, "2"},
+            {YYEOF},
     };
     TEST_LEX(actual, expected)
 }

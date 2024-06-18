@@ -7,12 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
 file(GLOB_RECURSE SOURCES src/*.cpp)
 set(LEXER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+set(PARSER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 set(LEXER_OUT "${LEXER_DIR}/lexer.cpp")
+set(PARSER_OUT "${PARSER_DIR}/parser.cpp")
 
 include_directories(./include)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -23,9 +26,11 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
-flex_target(lexer src/lexer.l "${LEXER_OUT}" DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.h)
+flex_target(lexer src/lexer.l "${LEXER_OUT}" DEFINES_FILE ${LEXER_DIR}/lexer.h)
+bison_target(parser src/parser.y "${PARSER_OUT}" DEFINES_FILE ${PARSER_DIR}/parser.h)
+add_flex_bison_dependency(lexer parser)
 
-add_executable(SPL main.cpp ${SOURCES} ${LEXER_OUT})
-add_executable(tests ${TEST_SOURCES} ${SOURCES} ${LEXER_OUT})
+add_executable(SPL main.cpp ${SOURCES} ${LEXER_OUT} ${PARSER_OUT})
+add_executable(tests ${TEST_SOURCES} ${SOURCES} ${LEXER_OUT} ${PARSER_OUT})
 target_link_libraries(SPL)
 target_link_libraries(tests GTest::gtest_main GTest::gmock_main)

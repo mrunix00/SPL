@@ -59,3 +59,5 @@ struct ReturnStatement : public AbstractSyntaxTree {
     explicit ReturnStatement(AbstractSyntaxTree *expression);
     bool operator==(const AbstractSyntaxTree &other) const override;
 };
+
+AbstractSyntaxTree* parse(const char *input);

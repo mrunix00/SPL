@@ -77,12 +77,12 @@ TEST(ParserTests, FunctionDeclaration) {
     const char *input = "define max : function(x: i32, y: i32) -> i32";
     auto expectedResult = new Declaration(
             new FunctionDeclaration(
-                    new Node({Define, "i32"}),
+                    new Node({I32, "i32"}),
                     {new Declaration(
-                             new Node({Define, "i32"}),
+                             new Node({I32, "i32"}),
                              Node({Identifier, "x"})),
                      new Declaration(
-                             new Node({Define, "i32"}),
+                             new Node({I32, "i32"}),
                              Node({Identifier, "y"}))}),
             Node({Identifier, "max"}));
     auto actualResult = parse(input);
@@ -98,13 +98,13 @@ TEST(ParserTests, FunctionDeclarationWithBody) {
                         "}";
     auto expectedResult = new Declaration(
             new FunctionDeclaration(
-                    new Node({Define, "i32"}),
+                    new Node({I32, "i32"}),
                     {
                             new Declaration(
-                                    new Node({Define, "i32"}),
+                                    new Node({I32, "i32"}),
                                     Node({Identifier, "x"})),
                             new Declaration(
-                                    new Node({Define, "i32"}),
+                                    new Node({I32, "i32"}),
                                     Node({Identifier, "y"})),
                     }),
             Node({Identifier, "max"}),

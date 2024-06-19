@@ -51,7 +51,7 @@ TEST(ParserTests, OperationsPriority) {
 TEST(ParserTests, Declaration) {
     const char *input = "define a : u32";
     auto expectedResult = new Declaration(
-            new Node({Define, "u32"}),
+            new Node({U32, "u32"}),
             Node({Identifier, "a"}));
     auto actualResult = parse(input);
 
@@ -63,7 +63,7 @@ TEST(ParserTests, Declaration) {
 TEST(ParserTests, DeclarationWithInitialization) {
     const char *input = "define a : u32 = 42";
     auto expectedResult = new Declaration(
-            new Node({Define, "u32"}),
+            new Node({U32, "u32"}),
             Node({Identifier, "a"}),
             new Node({Number, "42"}));
     auto actualResult = parse(input);

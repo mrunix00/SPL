@@ -31,8 +31,9 @@ bool BinaryExpression::operator==(const AbstractSyntaxTree &other) const {
 }
 
 Declaration::Declaration(AbstractSyntaxTree *type, Node identifier, AbstractSyntaxTree *value)
-    : type(type), identifier(std::move(identifier)), value(value) {
+    : type(type), identifier(std::move(identifier)) {
     nodeType = Type::Declaration;
+    this->value = std::make_optional<AbstractSyntaxTree *>(value);
     assert(value != nullptr, "Initialization can't be null!");
     assert(type != nullptr, "Type can't be null!");
 }
@@ -44,9 +45,12 @@ Declaration::Declaration(AbstractSyntaxTree *type, Node identifier)
 bool Declaration::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     auto &otherDeclaration = dynamic_cast<const Declaration &>(other);
+    if (value.has_value() && otherDeclaration.value.has_value() &&
+        !(*value.value() == *otherDeclaration.value.value()))
+        return false;
     return *type == *otherDeclaration.type &&
            identifier == otherDeclaration.identifier &&
-           *value == *otherDeclaration.value;
+           value.has_value() == otherDeclaration.value.has_value();
 }
 
 

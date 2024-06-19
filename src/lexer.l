@@ -45,6 +45,7 @@
 "bool"                      { return Bool; }
 "true"                      { return True; }
 "false"                     { return False; }
-[a-z_A-Z]+[a-z_A-Z0-9]*     { return Identifier; }
+":"                         { return Colon; }
+[a-z_A-Z]+[a-z_A-Z0-9]*     { yylval.str = strdup(yytext); return Identifier; }
 
 %%

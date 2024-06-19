@@ -28,6 +28,7 @@
 "||"                        { return Or; }
 "!"                         { return Not; }
 "define"                    { return Define; }
+"function"                  { return Function; }
 "if"                        { return If; }
 "else"                      { return Else; }
 "while"                     { return While; }

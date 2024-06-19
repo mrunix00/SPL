@@ -1,5 +1,6 @@
 %{
     #include <iostream>
+    #include <vector>
     #include "ast.h"
     #include "lexer.h"
     extern int yylex(void);
@@ -9,17 +10,18 @@
     }
 
     AbstractSyntaxTree* root = nullptr;
+    std::vector<Declaration*> declarations;
 %}
 
 %union {
-    void* ast;
-    char* str;
+    void*   ast;
+    char*   str;
 }
 
 %token String Plus Minus Multiply Divide Modulo Assign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
-%token Define If Else While Return U8 U16 U32 U64 I8 I16 I32 I64
-%token F32 F64 Bool True False
+%token Define Function If Else While Return
+%token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool True False
 %token Colon Comma Semicolon Arrow
 %token LParen RParen LBrace RBrace LBracket RBracket
 
@@ -27,6 +29,9 @@
 %token <str> Identifier
 %type <ast> expression
 %type <ast> VarType
+%type <ast> ArgumentDeclaration
+%type <ast> ArgumentList
+%type <ast> FunctionDeclaration
 
 %left Plus Minus
 %left Multiply
@@ -51,6 +56,30 @@ VarType:
     | I64 { $$ = new Node({I64, "i64"}); }
     | F32 { $$ = new Node({F32, "f32"}); }
     | F64 { $$ = new Node({F64, "f64"}); }
+    ;
+
+ArgumentDeclaration:
+    Identifier Colon VarType {
+        $$ = new Declaration((AbstractSyntaxTree*) $3, Node({Identifier, $1}));
+    }
+    ;
+
+ArgumentList:
+    ArgumentDeclaration {
+        declarations.clear();
+        declarations.push_back((Declaration*) $1);
+        $$ = &declarations;
+    }
+    | ArgumentList Comma ArgumentDeclaration {
+        declarations.push_back((Declaration*) $3);
+        $$ = &declarations;
+    }
+    ;
+
+FunctionDeclaration:
+    Function LParen ArgumentList RParen Arrow VarType {
+        $$ = new FunctionDeclaration((AbstractSyntaxTree*) $6, *(std::vector<Declaration*>*) $3);
+    }
     ;
 
 expression:
@@ -80,6 +109,9 @@ expression:
     }
     | Define Identifier Colon VarType Assign expression {
         $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}), (AbstractSyntaxTree*) $6);
+    }
+    | Define Identifier Colon FunctionDeclaration {
+        $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}));
     }
     ;
 %%

@@ -24,6 +24,10 @@
 %token <str> Number
 %type <ast> expression
 
+%left Plus Minus
+%left Multiply
+%left Divide
+
 %%
 
 input:
@@ -38,6 +42,18 @@ expression:
     }
     | expression Plus expression {
         $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Plus, "+"});
+    }
+    | expression Minus expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Minus, "-"});
+    }
+    | expression Multiply expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Multiply, "*"});
+    }
+    | expression Divide expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Divide, "/"});
+    }
+    | expression Modulo expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Modulo, "%"});
     }
     ;
 %%

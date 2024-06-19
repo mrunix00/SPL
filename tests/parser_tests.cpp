@@ -32,6 +32,22 @@ TEST(ParserTests, CompoundBinaryExpression) {
     delete actualResult;
 }
 
+TEST(ParserTests, OperationsPriority) {
+    const char *input = "1 * 2 + 3";
+    auto expectedResult = new BinaryExpression(
+            new BinaryExpression(
+                    new Node({Number, "1"}),
+                    new Node({Number, "2"}),
+                    {Multiply, "*"}),
+            new Node({Number, "3"}),
+            {Plus, "+"});
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
+    delete expectedResult;
+    delete actualResult;
+}
+
 TEST(ParserTests, Declaration) {
     const char *input = "define a : u32";
     auto expectedResult = new Declaration(

@@ -86,6 +86,23 @@ TEST(Lexer, BooleanOperators) {
     TEST_LEX(actual, expected)
 }
 
+TEST(Lexer, Symbols) {
+    auto actual = lex(":;(){}[]->");
+    std::vector<Token> expected = {
+            {Colon, ":"},
+            {Semicolon, ";"},
+            {LParen, "("},
+            {RParen, ")"},
+            {LBrace, "{"},
+            {RBrace, "}"},
+            {LBracket, "["},
+            {RBracket, "]"},
+            {Arrow, "->"},
+            {YYEOF},
+    };
+    TEST_LEX(actual, expected)
+}
+
 TEST(Lexer, Keywords) {
     auto actual = lex(
             "define if else while return "

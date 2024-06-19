@@ -46,6 +46,16 @@
 "true"                      { return True; }
 "false"                     { return False; }
 ":"                         { return Colon; }
+";"                         { return Semicolon; }
+"("                         { return LParen; }
+")"                         { return RParen; }
+"{"                         { return LBrace; }
+"}"                         { return RBrace; }
+","                         { return Comma; }
+"->"                        { return Arrow; }
+"["                         { return LBracket; }
+"]"                         { return RBracket; }
+"->"                        { return Arrow; }
 [a-z_A-Z]+[a-z_A-Z0-9]*     { yylval.str = strdup(yytext); return Identifier; }
 
 %%

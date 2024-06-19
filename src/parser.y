@@ -19,7 +19,9 @@
 %token String Plus Minus Multiply Divide Modulo Assign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define If Else While Return U8 U16 U32 U64 I8 I16 I32 I64
-%token F32 F64 Bool True False Colon
+%token F32 F64 Bool True False
+%token Colon Comma Semicolon Arrow
+%token LParen RParen LBrace RBrace LBracket RBracket
 
 %token <str> Number
 %token <str> Identifier

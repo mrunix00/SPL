@@ -35,6 +35,7 @@
 %type <ast> ArgumentDeclarationsList
 %type <ast> FunctionDeclaration
 %type <ast> ScopedBody
+%type <ast> TypeCast
 
 %left Plus Minus
 %left Multiply
@@ -86,6 +87,12 @@ FunctionDeclaration:
     }
     ;
 
+TypeCast:
+    LParen Expression RParen Expression  {
+        $$ = new TypeCast((AbstractSyntaxTree*) $4, (AbstractSyntaxTree*) $2);
+    }
+    ;
+
 Expressions:
     Expression {
         Expressions = new std::vector<AbstractSyntaxTree*>();
@@ -111,6 +118,7 @@ Expression:
     | FunctionDeclaration { $$ = $1; }
     | VarType { $$ = $1; }
     | ScopedBody { $$ = $1; }
+    | TypeCast { $$ = $1; }
     | Expression Plus Expression {
         $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Plus, "+"});
     }

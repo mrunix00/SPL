@@ -103,8 +103,19 @@ ReturnStatement::ReturnStatement(AbstractSyntaxTree *expression)
     nodeType = Type::ReturnStatement;
     assert(expression != nullptr, "Return expression can't be null!");
 }
-
 bool ReturnStatement::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     return *expression == *dynamic_cast<const ReturnStatement &>(other).expression;
+}
+
+TypeCast::TypeCast(AbstractSyntaxTree *expression, AbstractSyntaxTree *type)
+    : expression(expression), type(type) {
+    nodeType = Type::TypeCast;
+    assert(expression != nullptr, "Expression can't be null!");
+    assert(type != nullptr, "Type can't be null!");
+}
+bool TypeCast::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherTypeCast = dynamic_cast<const TypeCast &>(other);
+    return *expression == *otherTypeCast.expression && *type == *otherTypeCast.type;
 }

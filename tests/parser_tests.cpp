@@ -166,3 +166,33 @@ TEST(ParserTests, FunctionDeclarationWithBodyWithMultipleExpressions) {
     delete expectedResult;
     delete actualResult;
 }
+
+TEST(ParserTests, FunctionDeclarationWithAutoTypeDeduction) {
+    const char *input = "define max = (function (x: i32, y: i32) -> i32) {\n"
+                        "\treturn x + y\n"
+                        "};";
+    auto expectedResult = new Declaration(
+            Node({Identifier, "max"}),
+            new TypeCast(
+                    new ScopedBody({
+                            new ReturnStatement(new BinaryExpression(
+                                    new Node({Identifier, "x"}),
+                                    new Node({Identifier, "y"}),
+                                    {Plus, "+"})),
+                    }),
+                    new FunctionDeclaration(
+                            new Node({I32, "i32"}),
+                            {
+                                    new Declaration(
+                                            new Node({I32, "i32"}),
+                                            Node({Identifier, "x"})),
+                                    new Declaration(
+                                            new Node({I32, "i32"}),
+                                            Node({Identifier, "y"})),
+                            })));
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
+    delete expectedResult;
+    delete actualResult;
+}

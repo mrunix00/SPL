@@ -26,16 +26,9 @@
 %token Colon Comma Semicolon Arrow Newline
 %token LParen RParen LBrace RBrace LBracket RBracket
 
-%token <str> Number
-%token <str> Identifier
-%type <ast> Expression
-%type <ast> Expressions
-%type <ast> VarType
-%type <ast> ArgumentDeclaration
-%type <ast> ArgumentDeclarationsList
-%type <ast> FunctionDeclaration
-%type <ast> ScopedBody
-%type <ast> TypeCast
+%token <str> Number Identifier
+%type <ast> Expression Expressions VarType ScopedBody TypeCast
+%type <ast> ArgumentDeclaration ArgumentDeclarationsList FunctionDeclaration
 
 %left Plus Minus
 %left Multiply

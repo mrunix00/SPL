@@ -120,6 +120,21 @@ TEST(ParserTests, DeclarationWithAutoTypeDeduction) {
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
 
+TEST(ParserTests, VariableAssignment) {
+    const char *input = "a = 42;";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new BinaryExpression(
+                    new Node({Identifier, "a"}),
+                    new Node({Number, "42"}),
+                    {Assign, "="}),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}
+
 TEST(ParserTests, FunctionDeclaration) {
     const char *input = "define max : function(x: i32, y: i32) -> i32;";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{

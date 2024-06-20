@@ -113,6 +113,18 @@ Expression:
     | VarType { $$ = $1; }
     | ScopedBody { $$ = $1; }
     | TypeCast { $$ = $1; }
+    | Return Expression {
+        $$ = new ReturnStatement((AbstractSyntaxTree*) $2);
+    }
+    | Define Identifier Colon Expression {
+        $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}));
+    }
+    | Define Identifier Colon Expression Assign Expression {
+        $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}), (AbstractSyntaxTree*) $6);
+    }
+    | Define Identifier Assign Expression {
+        $$ = new Declaration(Node({Identifier, $2}), (AbstractSyntaxTree*) $4);
+    }
     | Expression Plus Expression {
         $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Plus, "+"});
     }
@@ -128,17 +140,8 @@ Expression:
     | Expression Modulo Expression {
         $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Modulo, "%"});
     }
-    | Return Expression {
-        $$ = new ReturnStatement((AbstractSyntaxTree*) $2);
-    }
-    | Define Identifier Colon Expression {
-        $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}));
-    }
-    | Define Identifier Colon Expression Assign Expression {
-        $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}), (AbstractSyntaxTree*) $6);
-    }
-    | Define Identifier Assign Expression {
-        $$ = new Declaration(Node({Identifier, $2}), (AbstractSyntaxTree*) $4);
+    | Expression Assign Expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Assign, "="});
     }
     ;
 %%

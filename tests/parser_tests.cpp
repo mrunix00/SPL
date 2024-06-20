@@ -73,6 +73,18 @@ TEST(ParserTests, DeclarationWithInitialization) {
     delete actualResult;
 }
 
+TEST(ParserTests, DeclarationWithAutoTypeDeduction) {
+    const char *input = "define a = 42;";
+    auto expectedResult = new Declaration(
+            Node({Identifier, "a"}),
+            new Node({Number, "42"}));
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(*expectedResult, *actualResult);
+    delete expectedResult;
+    delete actualResult;
+}
+
 TEST(ParserTests, FunctionDeclaration) {
     const char *input = "define max : function(x: i32, y: i32) -> i32;";
     auto expectedResult = new Declaration(

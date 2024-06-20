@@ -135,6 +135,9 @@ Expression:
     | Define Identifier Colon Expression Assign Expression {
         $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}), (AbstractSyntaxTree*) $6);
     }
+    | Define Identifier Assign Expression {
+        $$ = new Declaration(Node({Identifier, $2}), (AbstractSyntaxTree*) $4);
+    }
     ;
 %%
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "token.h"
-#include <vector>
 #include <optional>
+#include <vector>
 
 struct AbstractSyntaxTree {
     enum class Type {
@@ -33,11 +33,12 @@ struct BinaryExpression final : public AbstractSyntaxTree {
 };
 
 struct Declaration final : public AbstractSyntaxTree {
-    AbstractSyntaxTree *type;
+    std::optional<AbstractSyntaxTree *> type;
     Node identifier;
     std::optional<AbstractSyntaxTree *> value;
     Declaration(AbstractSyntaxTree *type, Node identifier, AbstractSyntaxTree *value);
     Declaration(AbstractSyntaxTree *type, Node identifier);
+    Declaration(Node identifier, AbstractSyntaxTree *value);
     bool operator==(const AbstractSyntaxTree &other) const override;
 };
 
@@ -60,4 +61,4 @@ struct ReturnStatement : public AbstractSyntaxTree {
     bool operator==(const AbstractSyntaxTree &other) const override;
 };
 
-AbstractSyntaxTree* parse(const char *input);
+AbstractSyntaxTree *parse(const char *input);

@@ -31,9 +31,8 @@ bool BinaryExpression::operator==(const AbstractSyntaxTree &other) const {
 }
 
 Declaration::Declaration(AbstractSyntaxTree *type, Node identifier, AbstractSyntaxTree *value)
-    : type(type), identifier(std::move(identifier)) {
+    : type(type), identifier(std::move(identifier)), value(std::make_optional<AbstractSyntaxTree *>(value)) {
     nodeType = Type::Declaration;
-    this->value = std::make_optional<AbstractSyntaxTree *>(value);
     assert(value != nullptr, "Initialization can't be null!");
     assert(type != nullptr, "Type can't be null!");
 }
@@ -42,17 +41,24 @@ Declaration::Declaration(AbstractSyntaxTree *type, Node identifier)
     nodeType = Type::Declaration;
     assert(type != nullptr, "Type can't be null!");
 }
+Declaration::Declaration(Node identifier, AbstractSyntaxTree *value)
+    : identifier(std::move(identifier)), value(std::make_optional<AbstractSyntaxTree *>(value)) {
+    nodeType = Type::Declaration;
+    assert(value != nullptr, "Initialization can't be null!");
+}
 bool Declaration::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     auto &otherDeclaration = dynamic_cast<const Declaration &>(other);
     if (value.has_value() && otherDeclaration.value.has_value() &&
         !(*value.value() == *otherDeclaration.value.value()))
         return false;
-    return *type == *otherDeclaration.type &&
+    if (type.has_value() && otherDeclaration.type.has_value() &&
+        !(*type.value() == *otherDeclaration.type.value()))
+        return false;
+    return type.has_value() == otherDeclaration.type.has_value() &&
            identifier == otherDeclaration.identifier &&
            value.has_value() == otherDeclaration.value.has_value();
 }
-
 
 ScopedBody::ScopedBody(const std::vector<AbstractSyntaxTree *> &body)
     : body(body) {

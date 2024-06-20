@@ -10,7 +10,8 @@
     }
 
     AbstractSyntaxTree* root = nullptr;
-    std::vector<Declaration*> declarations;
+    std::vector<Declaration*>* declarations;
+    std::vector<AbstractSyntaxTree*>* expressions;
 %}
 
 %union {
@@ -28,10 +29,12 @@
 %token <str> Number
 %token <str> Identifier
 %type <ast> expression
+%type <ast> expressions
 %type <ast> VarType
 %type <ast> ArgumentDeclaration
 %type <ast> ArgumentList
 %type <ast> FunctionDeclaration
+%type <ast> ScopedBody
 
 %left Plus Minus
 %left Multiply
@@ -66,19 +69,39 @@ ArgumentDeclaration:
 
 ArgumentList:
     ArgumentDeclaration {
-        declarations.clear();
-        declarations.push_back((Declaration*) $1);
-        $$ = &declarations;
+        declarations = new std::vector<Declaration*>();
+        declarations->push_back((Declaration*) $1);
+        $$ = declarations;
     }
     | ArgumentList Comma ArgumentDeclaration {
-        declarations.push_back((Declaration*) $3);
-        $$ = &declarations;
+        declarations->push_back((Declaration*) $3);
+        $$ = declarations;
     }
     ;
 
 FunctionDeclaration:
     Function LParen ArgumentList RParen Arrow VarType {
         $$ = new FunctionDeclaration((AbstractSyntaxTree*) $6, *(std::vector<Declaration*>*) $3);
+        delete (std::vector<Declaration*>*) $3;
+    }
+    ;
+
+expressions:
+    expression {
+        expressions = new std::vector<AbstractSyntaxTree*>();
+        expressions->push_back((AbstractSyntaxTree*) $1);
+        $$ = expressions;
+    }
+    | expressions Semicolon expression {
+        expressions->push_back((AbstractSyntaxTree*) $3);
+        $$ = expressions;
+    }
+    ;
+
+ScopedBody:
+    LBrace expressions RBrace {
+        $$ = new ScopedBody(*(std::vector<AbstractSyntaxTree*>*) $2);
+        delete $2;
     }
     ;
 
@@ -104,6 +127,9 @@ expression:
     | expression Modulo expression {
         $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Modulo, "%"});
     }
+    | Return expression {
+        $$ = new ReturnStatement((AbstractSyntaxTree*) $2);
+    }
     | Define Identifier Colon VarType {
         $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}));
     }
@@ -112,6 +138,9 @@ expression:
     }
     | Define Identifier Colon FunctionDeclaration {
         $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}));
+    }
+    | Define Identifier Colon FunctionDeclaration Assign ScopedBody {
+        $$ = new Declaration((AbstractSyntaxTree*) $4, Node({Identifier, $2}), (AbstractSyntaxTree*) $6);
     }
     ;
 %%

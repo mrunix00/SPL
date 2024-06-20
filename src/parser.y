@@ -9,7 +9,7 @@
         fprintf(stderr, "%s\n", s);
     }
 
-    AbstractSyntaxTree* root = nullptr;
+    std::vector<AbstractSyntaxTree*> root;
     std::vector<Declaration*>* declarations;
     std::vector<AbstractSyntaxTree*>* Expressions;
 %}
@@ -36,9 +36,11 @@
 
 %%
 
-input:
+input: Statements {};
+Statements: | Statements Statement {};
+Statement:
     Expression Semicolon {
-        root = (AbstractSyntaxTree*) $1;
+        root.push_back((AbstractSyntaxTree*) $1);
     }
     ;
 
@@ -101,7 +103,6 @@ Expressions:
 ScopedBody:
     LBrace Expressions RBrace {
         $$ = new ScopedBody(*(std::vector<AbstractSyntaxTree*>*) $2);
-        delete $2;
     }
     ;
 
@@ -143,7 +144,8 @@ Expression:
 %%
 
 
-AbstractSyntaxTree* parse(const char *input) {
+std::vector<AbstractSyntaxTree*> parse(const char *input) {
+    root.clear();
     yy_scan_string(input);
     if (yyparse() != 0) throw std::runtime_error("Failed to parse input: " + std::string(input));
     return root;

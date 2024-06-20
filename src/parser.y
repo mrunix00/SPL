@@ -23,7 +23,7 @@
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define Function If Else While Return
 %token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool True False
-%token Colon Comma Semicolon Arrow
+%token Colon Comma Semicolon Arrow Newline
 %token LParen RParen LBrace RBrace LBracket RBracket
 
 %token <str> Number
@@ -43,7 +43,7 @@
 %%
 
 input:
-    Expression {
+    Expression Semicolon {
         root = (AbstractSyntaxTree*) $1;
     }
     ;

@@ -254,3 +254,50 @@ TEST(ParserTests, FunctionDeclarationWithAutoTypeDeduction) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, FunctionCall) {
+    const char *input = "max();";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new FunctionCall(
+                    Node({Identifier, "max"}),
+                    {}),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}
+
+TEST(ParserTests, FunctionCallWithArgument) {
+    const char *input = "max(x);";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new FunctionCall(
+                    Node({Identifier, "max"}),
+                    {
+                            new Node({Identifier, "x"}),
+                    }),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}
+
+TEST(ParserTests, FunctionCallWithMultipleArguments) {
+    const char *input = "max(1, 2);";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new FunctionCall(
+                    Node({Identifier, "max"}),
+                    {
+                            new Node({Number, "1"}),
+                            new Node({Number, "2"}),
+                    }),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

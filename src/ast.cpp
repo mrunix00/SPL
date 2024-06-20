@@ -119,3 +119,21 @@ bool TypeCast::operator==(const AbstractSyntaxTree &other) const {
     auto &otherTypeCast = dynamic_cast<const TypeCast &>(other);
     return *expression == *otherTypeCast.expression && *type == *otherTypeCast.type;
 }
+
+FunctionCall::FunctionCall(Node identifier, const std::vector<AbstractSyntaxTree *> &arguments)
+    : identifier(std::move(identifier)), arguments(arguments) {
+    nodeType = Type::FunctionCall;
+}
+bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherFunctionCall = dynamic_cast<const FunctionCall &>(other);
+
+    if (arguments.size() != otherFunctionCall.arguments.size()) return false;
+    for (size_t i = 0; i < arguments.size(); i++) {
+        if (!(*arguments[i] == *otherFunctionCall.arguments[i])) {
+            return false;
+        }
+    }
+
+    return identifier == otherFunctionCall.identifier;
+}

@@ -27,8 +27,8 @@
 %token LParen RParen LBrace RBrace LBracket RBracket
 
 %token <str> Number Identifier
-%type <ast> Expression Expressions VarType ScopedBody TypeCast
-%type <ast> ArgumentDeclaration ArgumentDeclarationsList FunctionDeclaration
+%type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall
+%type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration
 
 %left Plus Minus
 %left Multiply
@@ -106,6 +106,27 @@ ScopedBody:
     }
     ;
 
+Arguments:
+    Expression {
+        Expressions = new std::vector<AbstractSyntaxTree*>();
+        Expressions->push_back((AbstractSyntaxTree*) $1);
+        $$ = Expressions;
+    }
+    | Arguments Comma Expression {
+        Expressions->push_back((AbstractSyntaxTree*) $3);
+        $$ = Expressions;
+    }
+    ;
+
+FunctionCall:
+    Identifier LParen RParen {
+        $$ = new FunctionCall(Node({Identifier, $1}), {});
+    }
+    | Identifier LParen Arguments RParen {
+        $$ = new FunctionCall(Node({Identifier, $1}), *(std::vector<AbstractSyntaxTree*>*) $3);
+    }
+    ;
+
 Expression:
     Identifier { $$ = new Node({Identifier, $1}); }
     | Number { $$ = new Node({Number, $1}); }
@@ -113,6 +134,7 @@ Expression:
     | VarType { $$ = $1; }
     | ScopedBody { $$ = $1; }
     | TypeCast { $$ = $1; }
+    | FunctionCall { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement((AbstractSyntaxTree*) $2);
     }

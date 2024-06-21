@@ -10,6 +10,7 @@ static inline void assert(bool condition, const char *message) {
 
 Node::Node(Token token) : token(std::move(token)) {
     nodeType = Type::Node;
+    typeStr = "Node";
 }
 bool Node::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
@@ -39,6 +40,7 @@ void Node::compile(Program &program, Segment &segment) const {
 BinaryExpression::BinaryExpression(AbstractSyntaxTree *left, AbstractSyntaxTree *right, Token op)
     : left(left), right(right), op(std::move(op)) {
     nodeType = Type::BinaryExpression;
+    typeStr = "BinaryExpression";
     assert(left != nullptr, "Left operand can't be null!");
     assert(right != nullptr, "Right operand can't be null!");
 }
@@ -98,17 +100,20 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
 Declaration::Declaration(AbstractSyntaxTree *type, Node identifier, AbstractSyntaxTree *value)
     : type(type), identifier(std::move(identifier)), value(std::make_optional<AbstractSyntaxTree *>(value)) {
     nodeType = Type::Declaration;
+    typeStr = "Declaration";
     assert(value != nullptr, "Initialization can't be null!");
     assert(type != nullptr, "Type can't be null!");
 }
 Declaration::Declaration(AbstractSyntaxTree *type, Node identifier)
     : type(type), identifier(std::move(identifier)) {
     nodeType = Type::Declaration;
+    typeStr = "Declaration";
     assert(type != nullptr, "Type can't be null!");
 }
 Declaration::Declaration(Node identifier, AbstractSyntaxTree *value)
     : identifier(std::move(identifier)), value(std::make_optional<AbstractSyntaxTree *>(value)) {
     nodeType = Type::Declaration;
+    typeStr = "Declaration";
     assert(value != nullptr, "Initialization can't be null!");
 }
 bool Declaration::operator==(const AbstractSyntaxTree &other) const {
@@ -139,6 +144,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
 ScopedBody::ScopedBody(const std::vector<AbstractSyntaxTree *> &body)
     : body(body) {
     nodeType = Type::ScopedBody;
+    typeStr = "ScopedBody";
 }
 bool ScopedBody::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
@@ -153,12 +159,11 @@ bool ScopedBody::operator==(const AbstractSyntaxTree &other) const {
 
     return true;
 }
-void ScopedBody::compile(Program &program, Segment &segment) const {
-}
 
 FunctionDeclaration::FunctionDeclaration(AbstractSyntaxTree *returnType, const std::vector<Declaration *> &arguments)
     : returnType(returnType), arguments(arguments) {
     nodeType = Type::FunctionDeclaration;
+    typeStr = "FunctionDeclaration";
     assert(returnType != nullptr, "Return type can't be null!");
 }
 bool FunctionDeclaration::operator==(const AbstractSyntaxTree &other) const {
@@ -175,24 +180,22 @@ bool FunctionDeclaration::operator==(const AbstractSyntaxTree &other) const {
 
     return true;
 }
-void FunctionDeclaration::compile(Program &program, Segment &segment) const {
-}
 
 ReturnStatement::ReturnStatement(AbstractSyntaxTree *expression)
     : expression(expression) {
     nodeType = Type::ReturnStatement;
+    typeStr = "ReturnStatement";
     assert(expression != nullptr, "Return expression can't be null!");
 }
 bool ReturnStatement::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     return *expression == *dynamic_cast<const ReturnStatement &>(other).expression;
 }
-void ReturnStatement::compile(Program &program, Segment &segment) const {
-}
 
 TypeCast::TypeCast(AbstractSyntaxTree *expression, AbstractSyntaxTree *type)
     : expression(expression), type(type) {
     nodeType = Type::TypeCast;
+    typeStr = "TypeCast";
     assert(expression != nullptr, "Expression can't be null!");
     assert(type != nullptr, "Type can't be null!");
 }
@@ -201,11 +204,10 @@ bool TypeCast::operator==(const AbstractSyntaxTree &other) const {
     auto &otherTypeCast = dynamic_cast<const TypeCast &>(other);
     return *expression == *otherTypeCast.expression && *type == *otherTypeCast.type;
 }
-void TypeCast::compile(Program &program, Segment &segment) const {
-}
 
 FunctionCall::FunctionCall(Node identifier, const std::vector<AbstractSyntaxTree *> &arguments)
     : identifier(std::move(identifier)), arguments(arguments) {
+    typeStr = "FunctionCall";
     nodeType = Type::FunctionCall;
 }
 bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
@@ -221,18 +223,18 @@ bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
 
     return identifier == otherFunctionCall.identifier;
 }
-void FunctionCall::compile(Program &program, Segment &segment) const {
-}
 
 IfStatement::IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody, AbstractSyntaxTree *elseBody)
     : condition(condition), thenBody(thenBody), elseBody(std::make_optional<AbstractSyntaxTree *>(elseBody)) {
     nodeType = Type::IfStatement;
+    typeStr = "IfStatement";
     assert(condition != nullptr, "Condition can't be null!");
     assert(thenBody != nullptr, "Then body can't be null!");
 }
 IfStatement::IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody)
     : condition(condition), thenBody(thenBody) {
     nodeType = Type::IfStatement;
+    typeStr = "IfStatement";
     assert(condition != nullptr, "Condition can't be null!");
     assert(thenBody != nullptr, "Then body can't be null!");
 }
@@ -247,8 +249,6 @@ bool IfStatement::operator==(const AbstractSyntaxTree &other) const {
     return *condition == *otherIfStatement.condition &&
            *thenBody == *otherIfStatement.thenBody &&
            elseBody.has_value() == otherIfStatement.elseBody.has_value();
-}
-void IfStatement::compile(Program &program, Segment &segment) const {
 }
 
 Program compile(const char *input) {

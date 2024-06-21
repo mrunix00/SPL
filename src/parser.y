@@ -27,12 +27,11 @@
 %token LParen RParen LBrace RBrace LBracket RBracket
 
 %token <str> Number Identifier
-%type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall
+%type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration
 
 %left Plus Minus
-%left Multiply
-%left Divide
+%left Multiply Divide
 
 %%
 
@@ -41,6 +40,18 @@ Statements: | Statements Statement {};
 Statement:
     Expression Semicolon {
         root.push_back((AbstractSyntaxTree*) $1);
+    }
+    | IfStatement {
+        root.push_back((AbstractSyntaxTree*) $1);
+    }
+    ;
+
+IfStatement:
+    If Expression ScopedBody {
+        $$ = new IfStatement((AbstractSyntaxTree*) $2, (AbstractSyntaxTree*) $3);
+    }
+    | If Expression ScopedBody Else ScopedBody {
+        $$ = new IfStatement((AbstractSyntaxTree*) $2, (AbstractSyntaxTree*) $3, (AbstractSyntaxTree*) $5);
     }
     ;
 
@@ -89,13 +100,13 @@ TypeCast:
     ;
 
 Expressions:
-    Expression {
+    Expression Semicolon {
         Expressions = new std::vector<AbstractSyntaxTree*>();
         Expressions->push_back((AbstractSyntaxTree*) $1);
         $$ = Expressions;
     }
-    | Expressions Semicolon Expression {
-        Expressions->push_back((AbstractSyntaxTree*) $3);
+    | Expressions Expression Semicolon {
+        Expressions->push_back((AbstractSyntaxTree*) $2);
         $$ = Expressions;
     }
     ;

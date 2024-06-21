@@ -137,3 +137,28 @@ bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
 
     return identifier == otherFunctionCall.identifier;
 }
+
+IfStatement::IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody, AbstractSyntaxTree *elseBody)
+: condition(condition), thenBody(thenBody), elseBody(std::make_optional<AbstractSyntaxTree *>(elseBody)) {
+    nodeType = Type::IfStatement;
+    assert(condition != nullptr, "Condition can't be null!");
+    assert(thenBody != nullptr, "Then body can't be null!");
+}
+IfStatement::IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody)
+: condition(condition), thenBody(thenBody) {
+    nodeType = Type::IfStatement;
+    assert(condition != nullptr, "Condition can't be null!");
+    assert(thenBody != nullptr, "Then body can't be null!");
+}
+bool IfStatement::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherIfStatement = dynamic_cast<const IfStatement &>(other);
+
+    if (elseBody.has_value() && otherIfStatement.elseBody.has_value() &&
+        !(*elseBody.value() == *otherIfStatement.elseBody.value()))
+        return false;
+
+    return *condition == *otherIfStatement.condition &&
+           *thenBody == *otherIfStatement.thenBody &&
+           elseBody.has_value() == otherIfStatement.elseBody.has_value();
+}

@@ -15,7 +15,7 @@ struct Instruction {
         DivI32,
         ModI32,
         LoadI32,
-        StoreI32
+        StoreGlobalI32
     } type{};
     union {
         void *ptr;
@@ -42,6 +42,7 @@ struct Program {
     std::unordered_map<std::string, Variable> globals;
     std::vector<Segment> segments;
     Program();
+    void addGlobal(const std::string &name, Variable::Type type);
 };
 
 struct StackFrame {
@@ -51,6 +52,7 @@ struct StackFrame {
 
 class VM {
     void *stack;
+    std::vector<void *> globals;
     size_t stackSize{};
     size_t stackCapacity;
     std::stack<StackFrame> callStack;
@@ -61,6 +63,8 @@ public:
     void popStackFrame();
     void *getLocal(size_t index);
     void setLocal(size_t index, void **value);
+    void *getGlobal(size_t index);
+    void setGlobal(size_t index, void **value);
     void pushStack(void *value, size_t size);
     void *popStack(size_t size);
     void *topStack(size_t size);

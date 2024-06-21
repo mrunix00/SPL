@@ -17,15 +17,22 @@ bool Node::operator==(const AbstractSyntaxTree &other) const {
 }
 void Node::compile(Program &program, Segment &segment) const {
     switch (token.type) {
-        case Number:
+        case Number: {
             segment.instructions.push_back(
                     Instruction{
                             .type = Instruction::InstructionType::LoadI32,
                             .params = {.i32 = std::stoi(token.value)},
                     });
-            break;
+        } break;
+        case Identifier: {
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::LoadI32,
+                            .params = {.index = program.globals[token.value].index},
+                    });
+        } break;
         default:
-            throw std::runtime_error("Invalid operator: " + token.value);
+            throw std::runtime_error("[Node::compile] This should not be accessed!");
     }
 }
 
@@ -43,7 +50,7 @@ bool BinaryExpression::operator==(const AbstractSyntaxTree &other) const {
            op == otherBinaryExpression.op;
 }
 void BinaryExpression::compile(Program &program, Segment &segment) const {
-left->compile(program, segment);
+    left->compile(program, segment);
     right->compile(program, segment);
     switch (op.type) {
         case Plus:
@@ -76,8 +83,15 @@ left->compile(program, segment);
                             .type = Instruction::InstructionType::ModI32,
                     });
             break;
+        case Assign:
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::StoreGlobalI32,
+                            .params = {.index = program.globals[static_cast<Node &>(*left).token.value].index},
+                    });
+            break;
         default:
-            throw std::runtime_error("Invalid operator: " + op.value);
+            throw std::runtime_error("[BinaryExpression::compile] Invalid operator: " + op.value);
     }
 }
 
@@ -111,6 +125,15 @@ bool Declaration::operator==(const AbstractSyntaxTree &other) const {
            value.has_value() == otherDeclaration.value.has_value();
 }
 void Declaration::compile(Program &program, Segment &segment) const {
+    program.addGlobal(identifier.token.value, Variable::Type::I32);
+    if (value.has_value()) {
+        value.value()->compile(program, segment);
+        segment.instructions.push_back(
+                Instruction{
+                        .type = Instruction::InstructionType::StoreGlobalI32,
+                        .params = {.index = program.globals[identifier.token.value].index},
+                });
+    }
 }
 
 ScopedBody::ScopedBody(const std::vector<AbstractSyntaxTree *> &body)
@@ -231,7 +254,7 @@ void IfStatement::compile(Program &program, Segment &segment) const {
 Program compile(const char *input) {
     Program program;
     auto ast = parse(input);
-    for (auto &node : ast) {
+    for (auto &node: ast) {
         node->compile(program, program.segments[0]);
     }
     return program;

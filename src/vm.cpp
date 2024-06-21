@@ -1,9 +1,17 @@
 #include "vm.h"
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 
 Program::Program() {
     segments.emplace_back();
+}
+void Program::addGlobal(const std::string &name, Variable::Type type) {
+    Variable variable;
+    variable.name = name;
+    variable.type = type;
+    variable.index = globals.size();
+    globals[name] = variable;
 }
 
 VM::VM() {
@@ -22,10 +30,16 @@ void VM::popStackFrame() {
     callStack.pop();
 }
 void *VM::getLocal(const size_t index) {
-    return callStack.top().locals[index];
+    return callStack.top().locals.at(index);
 }
 void VM::setLocal(const size_t index, void **value) {
     callStack.top().locals[index] = *value;
+}
+void *VM::getGlobal(size_t index) {
+    return globals[index];
+}
+void VM::setGlobal(const size_t index, void **value) {
+    globals[index] = *value;
 }
 void VM::pushStack(void *value, size_t size) {
     if (stackSize + size > stackCapacity) {
@@ -47,8 +61,12 @@ void *VM::topStack(size_t size) {
 
 void VM::run(const Program &program) {
     size_t segmentIndex = 0, instructionIndex = 0;
+    globals.reserve(program.globals.size());
     for (;;) {
         auto &segment = program.segments[segmentIndex];
+        if (instructionIndex == segment.instructions.size() && segmentIndex == 0) {
+            break;
+        }
         auto &instruction = segment.instructions[instructionIndex];
         switch (instruction.type) {
             case Instruction::InstructionType::AddI32: {
@@ -84,12 +102,13 @@ void VM::run(const Program &program) {
             case Instruction::InstructionType::LoadI32: {
                 pushStack(((void *) &instruction.params.i32), sizeof(int32_t));
             } break;
+            case Instruction::InstructionType::StoreGlobalI32: {
+                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                setGlobal(instruction.params.index, (void **) &val);
+            } break;
             default:
-                throw std::runtime_error("Invalid instruction type: " + std::to_string(instruction.type));
+                throw std::runtime_error("[VM::run] This should not be accessed!");
         }
         instructionIndex++;
-        if (instructionIndex == segment.instructions.size() && segmentIndex == 0) {
-            break;
-        }
     }
 }

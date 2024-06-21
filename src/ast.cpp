@@ -15,6 +15,19 @@ bool Node::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     return token == dynamic_cast<const Node &>(other).token;
 }
+void Node::compile(Program &program, Segment &segment) const {
+    switch (token.type) {
+        case Number:
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::LoadI32,
+                            .params = {.i32 = std::stoi(token.value)},
+                    });
+            break;
+        default:
+            throw std::runtime_error("Invalid operator: " + token.value);
+    }
+}
 
 BinaryExpression::BinaryExpression(AbstractSyntaxTree *left, AbstractSyntaxTree *right, Token op)
     : left(left), right(right), op(std::move(op)) {
@@ -28,6 +41,44 @@ bool BinaryExpression::operator==(const AbstractSyntaxTree &other) const {
     return *left == *otherBinaryExpression.left &&
            *right == *otherBinaryExpression.right &&
            op == otherBinaryExpression.op;
+}
+void BinaryExpression::compile(Program &program, Segment &segment) const {
+left->compile(program, segment);
+    right->compile(program, segment);
+    switch (op.type) {
+        case Plus:
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::AddI32,
+                    });
+            break;
+        case Minus:
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::SubI32,
+                    });
+            break;
+        case Multiply:
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::MulI32,
+                    });
+            break;
+        case Divide:
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::DivI32,
+                    });
+            break;
+        case Modulo:
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::ModI32,
+                    });
+            break;
+        default:
+            throw std::runtime_error("Invalid operator: " + op.value);
+    }
 }
 
 Declaration::Declaration(AbstractSyntaxTree *type, Node identifier, AbstractSyntaxTree *value)
@@ -59,6 +110,8 @@ bool Declaration::operator==(const AbstractSyntaxTree &other) const {
            identifier == otherDeclaration.identifier &&
            value.has_value() == otherDeclaration.value.has_value();
 }
+void Declaration::compile(Program &program, Segment &segment) const {
+}
 
 ScopedBody::ScopedBody(const std::vector<AbstractSyntaxTree *> &body)
     : body(body) {
@@ -76,6 +129,8 @@ bool ScopedBody::operator==(const AbstractSyntaxTree &other) const {
     }
 
     return true;
+}
+void ScopedBody::compile(Program &program, Segment &segment) const {
 }
 
 FunctionDeclaration::FunctionDeclaration(AbstractSyntaxTree *returnType, const std::vector<Declaration *> &arguments)
@@ -97,6 +152,8 @@ bool FunctionDeclaration::operator==(const AbstractSyntaxTree &other) const {
 
     return true;
 }
+void FunctionDeclaration::compile(Program &program, Segment &segment) const {
+}
 
 ReturnStatement::ReturnStatement(AbstractSyntaxTree *expression)
     : expression(expression) {
@@ -106,6 +163,8 @@ ReturnStatement::ReturnStatement(AbstractSyntaxTree *expression)
 bool ReturnStatement::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     return *expression == *dynamic_cast<const ReturnStatement &>(other).expression;
+}
+void ReturnStatement::compile(Program &program, Segment &segment) const {
 }
 
 TypeCast::TypeCast(AbstractSyntaxTree *expression, AbstractSyntaxTree *type)
@@ -118,6 +177,8 @@ bool TypeCast::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     auto &otherTypeCast = dynamic_cast<const TypeCast &>(other);
     return *expression == *otherTypeCast.expression && *type == *otherTypeCast.type;
+}
+void TypeCast::compile(Program &program, Segment &segment) const {
 }
 
 FunctionCall::FunctionCall(Node identifier, const std::vector<AbstractSyntaxTree *> &arguments)
@@ -137,15 +198,17 @@ bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
 
     return identifier == otherFunctionCall.identifier;
 }
+void FunctionCall::compile(Program &program, Segment &segment) const {
+}
 
 IfStatement::IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody, AbstractSyntaxTree *elseBody)
-: condition(condition), thenBody(thenBody), elseBody(std::make_optional<AbstractSyntaxTree *>(elseBody)) {
+    : condition(condition), thenBody(thenBody), elseBody(std::make_optional<AbstractSyntaxTree *>(elseBody)) {
     nodeType = Type::IfStatement;
     assert(condition != nullptr, "Condition can't be null!");
     assert(thenBody != nullptr, "Then body can't be null!");
 }
 IfStatement::IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody)
-: condition(condition), thenBody(thenBody) {
+    : condition(condition), thenBody(thenBody) {
     nodeType = Type::IfStatement;
     assert(condition != nullptr, "Condition can't be null!");
     assert(thenBody != nullptr, "Then body can't be null!");
@@ -161,4 +224,15 @@ bool IfStatement::operator==(const AbstractSyntaxTree &other) const {
     return *condition == *otherIfStatement.condition &&
            *thenBody == *otherIfStatement.thenBody &&
            elseBody.has_value() == otherIfStatement.elseBody.has_value();
+}
+void IfStatement::compile(Program &program, Segment &segment) const {
+}
+
+Program compile(const char *input) {
+    Program program;
+    auto ast = parse(input);
+    for (auto &node : ast) {
+        node->compile(program, program.segments[0]);
+    }
+    return program;
 }

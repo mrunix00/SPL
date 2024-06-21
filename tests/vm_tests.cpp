@@ -8,3 +8,43 @@ TEST(VM, SimpleAddition) {
     vm.run(program);
     ASSERT_EQ(*static_cast<int32_t *>(vm.popStack(sizeof(int32_t))), 3);
 }
+
+TEST(VM, SimpleSubtraction) {
+    const char *input = "3 - 2;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.popStack(sizeof(int32_t))), 1);
+}
+
+TEST(VM, SimpleMultiplication) {
+    const char *input = "3 * 2;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.popStack(sizeof(int32_t))), 6);
+}
+
+TEST(VM, SimpleDivision) {
+    const char *input = "6 / 2;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.popStack(sizeof(int32_t))), 3);
+}
+
+TEST(VM, SimpleModulus) {
+    const char *input = "6 % 4;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.popStack(sizeof(int32_t))), 2);
+}
+
+TEST(VM, CompoundExpression) {
+    const char *input = "1 + 2 * 3;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.popStack(sizeof(int32_t))), 7);
+}

@@ -64,3 +64,12 @@ TEST(VM, SimpleVariableAssignment) {
     vm.run(program);
     ASSERT_EQ(*static_cast<int32_t *>(vm.getGlobal(0)), 43);
 }
+
+TEST(VM, SimpleFunctionDeclaration) {
+    const char *input = "define add : function(x: i32, y: i32) -> i32 = { return x + y; };"
+                        "add(1, 2);";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.popStack(sizeof(int32_t))), 3);
+}

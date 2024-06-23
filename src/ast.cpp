@@ -26,11 +26,21 @@ void Node::compile(Program &program, Segment &segment) const {
                     });
         } break;
         case Identifier: {
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::LoadI32,
-                            .params = {.index = program.globals[token.value].index},
-                    });
+            if (segment.find_local(token.value) != -1) {
+                segment.instructions.push_back(
+                        Instruction{
+                                .type = Instruction::InstructionType::LoadLocalI32,
+                                .params = {.index = segment.find_local(token.value)},
+                        });
+            } else if (program.find_global(token.value) != -1) {
+                segment.instructions.push_back(
+                        Instruction{
+                                .type = Instruction::InstructionType::LoadGlobalI32,
+                                .params = {.index = program.find_global(token.value)},
+                        });
+            } else {
+                throw std::runtime_error("[Node::compile] Identifier not found: " + token.value);
+            }
         } break;
         default:
             throw std::runtime_error("[Node::compile] This should not be accessed!");
@@ -52,6 +62,23 @@ bool BinaryExpression::operator==(const AbstractSyntaxTree &other) const {
            op == otherBinaryExpression.op;
 }
 void BinaryExpression::compile(Program &program, Segment &segment) const {
+    if (op.type == Assign) {
+        right->compile(program, segment);
+        if (segment.find_local(dynamic_cast<Node &>(*left).token.value)) {
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::StoreLocalI32,
+                            .params = {.index = segment.find_local(dynamic_cast<Node &>(*left).token.value)},
+                    });
+        } else if (program.find_global(dynamic_cast<Node &>(*left).token.value) != -1) {
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::StoreGlobalI32,
+                            .params = {.index = program.find_global(dynamic_cast<Node &>(*left).token.value)},
+                    });
+        }
+        return;
+    }
     left->compile(program, segment);
     right->compile(program, segment);
     switch (op.type) {
@@ -83,13 +110,6 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
             segment.instructions.push_back(
                     Instruction{
                             .type = Instruction::InstructionType::ModI32,
-                    });
-            break;
-        case Assign:
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::StoreGlobalI32,
-                            .params = {.index = program.globals[static_cast<Node &>(*left).token.value].index},
                     });
             break;
         default:
@@ -130,14 +150,44 @@ bool Declaration::operator==(const AbstractSyntaxTree &other) const {
            value.has_value() == otherDeclaration.value.has_value();
 }
 void Declaration::compile(Program &program, Segment &segment) const {
-    program.addGlobal(identifier.token.value, Variable::Type::I32);
-    if (value.has_value()) {
-        value.value()->compile(program, segment);
-        segment.instructions.push_back(
-                Instruction{
-                        .type = Instruction::InstructionType::StoreGlobalI32,
-                        .params = {.index = program.globals[identifier.token.value].index},
-                });
+    if (!type.has_value())
+        throw std::runtime_error("[Declaration::compile] Type deduction is not implemented!");
+
+
+    switch (type.value()->nodeType) {
+        case AbstractSyntaxTree::Type::Node: {
+            switch (((Node *) type.value())->token.type) {
+                case I32: {
+                    value.value()->compile(program, segment);
+                    segment.instructions.push_back({
+                            .type = segment.id == 0
+                                            ? Instruction::InstructionType::StoreGlobalI32
+                                            : Instruction::InstructionType::StoreLocalI32,
+                            .params = {.index = segment.locals.size()},
+                    });
+                    segment.declare_variable(identifier.token.value, Variable::Type::I32);
+                } break;
+                default:
+                    throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
+            }
+        } break;
+        case AbstractSyntaxTree::Type::FunctionDeclaration: {
+            auto functionDeclaration = (FunctionDeclaration *) type.value();
+            auto newSegment = Segment{.id = program.segments.size()};
+            segment.declare_function(identifier.token.value, program.segments.size());
+            for (auto argument: functionDeclaration->arguments) {
+                newSegment.locals[argument->identifier.token.value] = {
+                        .name = argument->identifier.token.value,
+                        .type = Variable::Type::I32,// TODO: Handle all variable types
+                        .index = newSegment.locals.size(),
+                };
+            }
+            value.value()->compile(program, newSegment);
+            program.segments.push_back(newSegment);
+            segment.declare_variable(identifier.token.value, Variable::Type::Function);
+        } break;
+        default:
+            throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
     }
 }
 
@@ -158,6 +208,10 @@ bool ScopedBody::operator==(const AbstractSyntaxTree &other) const {
     }
 
     return true;
+}
+void ScopedBody::compile(Program &program, Segment &segment) const {
+    for (auto &node: body)
+        node->compile(program, segment);
 }
 
 FunctionDeclaration::FunctionDeclaration(AbstractSyntaxTree *returnType, const std::vector<Declaration *> &arguments)
@@ -191,6 +245,13 @@ bool ReturnStatement::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;
     return *expression == *dynamic_cast<const ReturnStatement &>(other).expression;
 }
+void ReturnStatement::compile(Program &program, Segment &segment) const {
+    expression->compile(program, segment);
+    segment.instructions.push_back(
+            Instruction{
+                    .type = Instruction::InstructionType::Return,
+            });
+}
 
 TypeCast::TypeCast(AbstractSyntaxTree *expression, AbstractSyntaxTree *type)
     : expression(expression), type(type) {
@@ -222,6 +283,17 @@ bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
     }
 
     return identifier == otherFunctionCall.identifier;
+}
+void FunctionCall::compile(Program &program, Segment &segment) const {
+    for (auto &argument: arguments) {
+        argument->compile(program, segment);
+    }
+
+    segment.instructions.push_back(
+            Instruction{
+                    .type = Instruction::InstructionType::Call,
+                    .params = {.index = program.find_function(segment, identifier.token.value)},
+            });
 }
 
 IfStatement::IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody, AbstractSyntaxTree *elseBody)

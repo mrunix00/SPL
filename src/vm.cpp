@@ -1,45 +1,66 @@
 #include "vm.h"
 #include <cstring>
-#include <iostream>
 #include <stdexcept>
 
 Program::Program() {
     segments.emplace_back();
 }
-void Program::addGlobal(const std::string &name, Variable::Type type) {
-    Variable variable;
-    variable.name = name;
-    variable.type = type;
-    variable.index = globals.size();
-    globals[name] = variable;
+size_t Program::find_global(const std::string &identifier) {
+    auto &segment = segments.front();
+    auto it = segment.locals.find(identifier);
+    if (it == segment.locals.end())
+        return -1;
+    return it->second.index;
+}
+size_t Program::find_function(const Segment &segment, const std::string &identifier) {
+    auto it = segment.functions.find(identifier);
+    if (it == segment.functions.end()) {
+        it = segments.front().functions.find(identifier);
+        if (it == segments.front().functions.end())
+            return -1;
+    }
+    return it->second;
+}
+
+void Segment::declare_variable(const std::string &name, Variable::Type type) {
+    locals[name] = Variable{name, type, locals.size()};
+}
+size_t Segment::find_local(const std::string &identifier) {
+    auto it = locals.find(identifier);
+    if (it == locals.end())
+        return -1;
+    return it->second.index;
+}
+void Segment::declare_function(const std::string &name, size_t index) {
+    functions[name] = index;
 }
 
 VM::VM() {
     stackCapacity = 1024;
     stack = malloc(stackCapacity);
+    callStack.push_back(StackFrame{});
 }
-void VM::newStackFrame(const Segment &segment) {
+void VM::newStackFrame(const Segment &segment, size_t id) {
     StackFrame frame;
-    frame.locals.resize(segment.locals.size());
+    frame.segmentIndex = id;
+    frame.locals = (void **) malloc(segment.locals.size() * sizeof(void *));
+    callStack.push_back(frame);
     for (auto &[name, variable]: segment.locals) {
-        frame.locals[variable.index] = nullptr;
+        auto val = popStack(sizeof(int32_t));
+        setLocal(variable.index, &val);
     }
-    callStack.push(frame);
-}
-void VM::popStackFrame() {
-    callStack.pop();
 }
 void *VM::getLocal(const size_t index) {
-    return callStack.top().locals.at(index);
+    return callStack.back().locals[index];
 }
 void VM::setLocal(const size_t index, void **value) {
-    callStack.top().locals[index] = *value;
+    callStack.back().locals[index] = *value;
 }
 void *VM::getGlobal(size_t index) {
-    return globals[index];
+    return callStack[0].locals[index];
 }
 void VM::setGlobal(const size_t index, void **value) {
-    globals[index] = *value;
+    callStack[0].locals[index] = *value;
 }
 void VM::pushStack(void *value, size_t size) {
     if (stackSize + size > stackCapacity) {
@@ -55,20 +76,20 @@ void *VM::popStack(size_t size) {
     memcpy(value, static_cast<char *>(stack) + stackSize, size);
     return value;
 }
-void *VM::topStack(size_t size) {
-    return static_cast<char *>(stack) + stackSize - size;
-}
 
 void VM::run(const Program &program) {
-    size_t segmentIndex = 0, instructionIndex = 0;
-    globals.reserve(program.globals.size());
+    callStack.front().locals = (void **) malloc(program.segments.front().locals.size() * sizeof(void *));
     for (;;) {
+        auto segmentIndex = callStack.back().segmentIndex;
+        auto &currentInstruction = callStack.back().currentInstruction;
         auto &segment = program.segments[segmentIndex];
-        if (instructionIndex == segment.instructions.size() && segmentIndex == 0) {
+        if (currentInstruction == segment.instructions.size() && segmentIndex == 0) {
             break;
         }
-        auto &instruction = segment.instructions[instructionIndex];
+        auto &instruction = segment.instructions[currentInstruction];
         switch (instruction.type) {
+            case Instruction::InstructionType::Invalid:
+                throw std::runtime_error("[VM::run] Invalid instruction!");
             case Instruction::InstructionType::AddI32: {
                 int32_t a = *static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 int32_t b = *static_cast<int32_t *>(popStack(sizeof(int32_t)));
@@ -106,9 +127,27 @@ void VM::run(const Program &program) {
                 auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 setGlobal(instruction.params.index, (void **) &val);
             } break;
+            case Instruction::InstructionType::LoadGlobalI32: {
+                auto val = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                pushStack((void *) val, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::StoreLocalI32: {
+                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                setLocal(instruction.params.index, (void **) &val);
+            } break;
+            case Instruction::InstructionType::LoadLocalI32: {
+                auto val = static_cast<int32_t *>(getLocal(instruction.params.index));
+                pushStack((void *) val, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::Return:
+                callStack.pop_back();
+                break;
+            case Instruction::InstructionType::Call: {
+                newStackFrame(program.segments[instruction.params.index], instruction.params.index);
+            } break;
             default:
-                throw std::runtime_error("[VM::run] This should not be accessed!");
+                throw std::runtime_error("[VM::run] Unimplemented instruction!");
         }
-        instructionIndex++;
+        currentInstruction++;
     }
 }

@@ -58,6 +58,7 @@ struct ScopedBody : public AbstractSyntaxTree {
     std::vector<AbstractSyntaxTree *> body;
     explicit ScopedBody(const std::vector<AbstractSyntaxTree *> &body);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 struct FunctionDeclaration : public AbstractSyntaxTree {
@@ -71,6 +72,7 @@ struct ReturnStatement : public AbstractSyntaxTree {
     AbstractSyntaxTree *expression;
     explicit ReturnStatement(AbstractSyntaxTree *expression);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 struct TypeCast : public AbstractSyntaxTree {
@@ -85,6 +87,7 @@ struct FunctionCall : public AbstractSyntaxTree {
     std::vector<AbstractSyntaxTree *> arguments;
     FunctionCall(Node identifier, const std::vector<AbstractSyntaxTree *> &arguments);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 struct IfStatement : public AbstractSyntaxTree {

@@ -15,7 +15,12 @@ struct Instruction {
         DivI32,
         ModI32,
         LoadI32,
-        StoreGlobalI32
+        StoreGlobalI32,
+        StoreLocalI32,
+        LoadGlobalI32,
+        LoadLocalI32,
+        Return,
+        Call,
     } type{};
     union {
         void *ptr;
@@ -28,7 +33,8 @@ struct Variable {
     std::string name;
     enum class Type {
         Invalid = 0,
-        I32
+        I32,
+        Function
     } type;
     size_t index;
 };
@@ -36,38 +42,41 @@ struct Variable {
 struct Segment {
     std::vector<Instruction> instructions;
     std::unordered_map<std::string, Variable> locals;
+    std::unordered_map<std::string, size_t> functions;
+    size_t id{};
+    size_t find_local(const std::string &identifier);
+    void declare_variable(const std::string &name, Variable::Type type);
+    void declare_function(const std::string &name, size_t index);
 };
 
 struct Program {
-    std::unordered_map<std::string, Variable> globals;
     std::vector<Segment> segments;
     Program();
-    void addGlobal(const std::string &name, Variable::Type type);
+    size_t find_global(const std::string &identifier);
+    size_t find_function(const Segment &segment, const std::string &identifier);
 };
 
 struct StackFrame {
-    // TODO: Make this memory space more compact
-    std::vector<void *> locals;
+    void **locals{};
+    size_t segmentIndex{};
+    size_t currentInstruction{};
 };
 
 class VM {
     void *stack;
-    std::vector<void *> globals;
     size_t stackSize{};
     size_t stackCapacity;
-    std::stack<StackFrame> callStack;
+    std::vector<StackFrame> callStack;
 
 public:
     VM();
-    void newStackFrame(const Segment &segment);
-    void popStackFrame();
+    void newStackFrame(const Segment &segment, size_t id);
     void *getLocal(size_t index);
     void setLocal(size_t index, void **value);
     void *getGlobal(size_t index);
     void setGlobal(size_t index, void **value);
     void pushStack(void *value, size_t size);
     void *popStack(size_t size);
-    void *topStack(size_t size);
 
     void run(const Program &program);
 };

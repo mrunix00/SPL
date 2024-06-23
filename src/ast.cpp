@@ -175,6 +175,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
             auto functionDeclaration = (FunctionDeclaration *) type.value();
             auto newSegment = Segment{.id = program.segments.size()};
             segment.declare_function(identifier.token.value, program.segments.size());
+            segment.declare_variable(identifier.token.value, Variable::Type::Function);
             for (auto argument: functionDeclaration->arguments) {
                 newSegment.locals[argument->identifier.token.value] = {
                         .name = argument->identifier.token.value,
@@ -184,7 +185,6 @@ void Declaration::compile(Program &program, Segment &segment) const {
             }
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);
-            segment.declare_variable(identifier.token.value, Variable::Type::Function);
         } break;
         default:
             throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");

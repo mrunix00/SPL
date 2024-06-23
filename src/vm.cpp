@@ -80,7 +80,7 @@ void *VM::popStack(size_t size) {
 void VM::run(const Program &program) {
     callStack.front().locals = (void **) malloc(program.segments.front().locals.size() * sizeof(void *));
     for (;;) {
-        auto segmentIndex = callStack.back().segmentIndex;
+        auto &segmentIndex = callStack.back().segmentIndex;
         auto &currentInstruction = callStack.back().currentInstruction;
         auto &segment = program.segments[segmentIndex];
         if (currentInstruction == segment.instructions.size() && segmentIndex == 0) {
@@ -141,13 +141,14 @@ void VM::run(const Program &program) {
             } break;
             case Instruction::InstructionType::Return:
                 callStack.pop_back();
-                break;
-            case Instruction::InstructionType::Call: {
+                continue;
+            case Instruction::InstructionType::Call:
+                callStack.back().currentInstruction++;
                 newStackFrame(program.segments[instruction.params.index], instruction.params.index);
-            } break;
+                continue;
             default:
                 throw std::runtime_error("[VM::run] Unimplemented instruction!");
         }
-        currentInstruction++;
+        callStack.back().currentInstruction++;
     }
 }

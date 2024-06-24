@@ -176,6 +176,24 @@ Expression:
     | Expression Assign Expression {
         $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Assign, "="});
     }
+    | Expression Equal Expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Equal, "=="});
+    }
+    | Expression NotEqual Expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {NotEqual, "!="});
+    }
+    | Expression Less Expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Less, "<"});
+    }
+    | Expression Greater Expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {Greater, ">"});
+    }
+    | Expression LessEqual Expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {LessEqual, "<="});
+    }
+    | Expression GreaterEqual Expression {
+        $$ = new BinaryExpression((AbstractSyntaxTree*) $1, (AbstractSyntaxTree*) $3, {GreaterEqual, ">="});
+    }
     ;
 %%
 

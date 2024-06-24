@@ -66,6 +66,7 @@ struct Program {
 
 struct StackFrame {
     void **locals{};
+    size_t number_of_locals{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
@@ -79,6 +80,7 @@ class VM {
 public:
     VM();
     void newStackFrame(const Segment &segment, size_t id);
+    void popStackFrame();
     void *getLocal(size_t index);
     void setLocal(size_t index, void **value);
     void *getGlobal(size_t index);

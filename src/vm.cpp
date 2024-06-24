@@ -43,12 +43,19 @@ VM::VM() {
 void VM::newStackFrame(const Segment &segment, size_t id) {
     StackFrame frame;
     frame.segmentIndex = id;
-    frame.locals = (void **) malloc(segment.locals.size() * sizeof(void *));
+    frame.number_of_locals = segment.locals.size();
+    frame.locals = (void **) malloc(frame.number_of_locals * sizeof(void *));
     callStack.push_back(frame);
     for (auto &[name, variable]: segment.locals) {
         auto val = popStack(sizeof(int32_t));
         setLocal(variable.index, &val);
     }
+}
+void VM::popStackFrame() {
+    for (size_t i = 0 ; i < callStack.back().number_of_locals; i++)
+        free(callStack.back().locals[i]);
+    free(callStack.back().locals);
+    callStack.pop_back();
 }
 void *VM::getLocal(const size_t index) {
     return callStack.back().locals[index];
@@ -164,7 +171,7 @@ void VM::run(const Program &program) {
                 pushStack((void *) val, sizeof(int32_t));
             } break;
             case Instruction::InstructionType::Return:
-                callStack.pop_back();
+                popStackFrame();
                 continue;
             case Instruction::InstructionType::Call:
                 callStack.back().currentInstruction++;

@@ -120,6 +120,18 @@ void VM::run(const Program &program) {
                 int32_t result = a % b;
                 pushStack(&result, sizeof(int32_t));
             } break;
+            case Instruction::InstructionType::GreaterI32: {
+                int32_t b = *static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                int32_t a = *static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                int32_t result = a > b;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::LessI32: {
+                int32_t b = *static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                int32_t a = *static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                int32_t result = a < b;
+                pushStack(&result, sizeof(int32_t));
+            } break;
             case Instruction::InstructionType::LoadI32: {
                 pushStack(((void *) &instruction.params.i32), sizeof(int32_t));
             } break;
@@ -145,6 +157,16 @@ void VM::run(const Program &program) {
             case Instruction::InstructionType::Call:
                 callStack.back().currentInstruction++;
                 newStackFrame(program.segments[instruction.params.index], instruction.params.index);
+                continue;
+            case Instruction::InstructionType::JumpIfFalse: {
+                auto val = *static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                if (val == 0) {
+                    callStack.back().currentInstruction = instruction.params.index;
+                    continue;
+                }
+            } break;
+            case Instruction::InstructionType::Jump:
+                callStack.back().currentInstruction = instruction.params.index;
                 continue;
             default:
                 throw std::runtime_error("[VM::run] Unimplemented instruction!");

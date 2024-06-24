@@ -97,6 +97,7 @@ struct IfStatement : public AbstractSyntaxTree {
     IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody, AbstractSyntaxTree *elseBody);
     IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 std::vector<AbstractSyntaxTree *> parse(const char *input);

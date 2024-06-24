@@ -83,34 +83,37 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
     right->compile(program, segment);
     switch (op.type) {
         case Plus:
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::AddI32,
-                    });
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::AddI32});
             break;
         case Minus:
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::SubI32,
-                    });
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::SubI32});
             break;
         case Multiply:
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::MulI32,
-                    });
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::MulI32});
             break;
         case Divide:
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::DivI32,
-                    });
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DivI32});
             break;
         case Modulo:
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::ModI32,
-                    });
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::ModI32});
+            break;
+        case Greater:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::GreaterI32});
+            break;
+        case Less:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::LessI32});
+            break;
+        case GreaterEqual:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::GreaterEqualI32});
+            break;
+        case LessEqual:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::LessEqualI32});
+            break;
+        case Equal:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::EqualI32});
+            break;
+        case NotEqual:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::NotEqualI32});
             break;
         default:
             throw std::runtime_error("[BinaryExpression::compile] Invalid operator: " + op.value);
@@ -321,6 +324,21 @@ bool IfStatement::operator==(const AbstractSyntaxTree &other) const {
     return *condition == *otherIfStatement.condition &&
            *thenBody == *otherIfStatement.thenBody &&
            elseBody.has_value() == otherIfStatement.elseBody.has_value();
+}
+void IfStatement::compile(Program &program, Segment &segment) const {
+    condition->compile(program, segment);
+    size_t jumpIndex = segment.instructions.size();
+    segment.instructions.push_back(
+            Instruction{.type = Instruction::InstructionType::JumpIfFalse});
+    thenBody->compile(program, segment);
+    segment.instructions[jumpIndex].params.index = segment.instructions.size() + elseBody.has_value();
+    if (elseBody.has_value()) {
+        jumpIndex = segment.instructions.size();
+        segment.instructions.push_back(
+                Instruction{.type = Instruction::InstructionType::Jump});
+        elseBody.value()->compile(program, segment);
+        segment.instructions[jumpIndex].params.index = segment.instructions.size() + 1;
+    }
 }
 
 Program compile(const char *input) {

@@ -15,12 +15,20 @@ struct Instruction {
         DivI32,
         ModI32,
         LoadI32,
+        GreaterI32,
+        LessI32,
+        GreaterEqualI32,
+        LessEqualI32,
+        EqualI32,
+        NotEqualI32,
         StoreGlobalI32,
         StoreLocalI32,
         LoadGlobalI32,
         LoadLocalI32,
         Return,
         Call,
+        JumpIfFalse,
+        Jump,
     } type{};
     union {
         void *ptr;

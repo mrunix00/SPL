@@ -41,9 +41,6 @@ Statement:
     Expression Semicolon {
         root.push_back((AbstractSyntaxTree*) $1);
     }
-    | IfStatement {
-        root.push_back((AbstractSyntaxTree*) $1);
-    }
     ;
 
 IfStatement:
@@ -146,6 +143,7 @@ Expression:
     | ScopedBody { $$ = $1; }
     | TypeCast { $$ = $1; }
     | FunctionCall { $$ = $1; }
+    | IfStatement { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement((AbstractSyntaxTree*) $2);
     }

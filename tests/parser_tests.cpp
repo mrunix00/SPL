@@ -305,7 +305,7 @@ TEST(ParserTests, FunctionCallWithMultipleArguments) {
 TEST(ParserTests, IfStatement) {
     const char *input = "if x {\n"
                         "\treturn x;\n"
-                        "}";
+                        "};";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
             new IfStatement(
                     new Node({Identifier, "x"}),
@@ -325,7 +325,7 @@ TEST(ParserTests, IfElseStatement) {
                         "\treturn x;\n"
                         "} else {\n"
                         "\treturn y;\n"
-                        "}";
+                        "};";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
             new IfStatement(
                     new Node({Identifier, "x"}),

@@ -4,6 +4,8 @@ project(SPL)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options(-O3)
+
 file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
 file(GLOB_RECURSE SOURCES src/*.cpp)
 set(LEXER_DIR "${CMAKE_CURRENT_BINARY_DIR}")

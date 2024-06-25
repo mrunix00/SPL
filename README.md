@@ -21,6 +21,13 @@ if x == 42 {
     // do something else
 };
 ```
+### Loops
+#### While loops
+```c
+while x < 42 {
+    // do something
+};
+```
 
 ## Roadmap
 - [x] Lexer
@@ -29,7 +36,8 @@ if x == 42 {
 - [x] Variables
 - [x] Functions
 - [x] Conditions
-- [ ] Loops
+- [x] While loops
+- [ ] For loops
 - [ ] Arrays
 - [ ] Strings
 - [ ] Hashmaps

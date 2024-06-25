@@ -40,7 +40,7 @@ VM::VM() {
     stack = malloc(stackCapacity);
     callStack.push_back(StackFrame{});
 }
-void VM::newStackFrame(const Segment &segment, size_t id) {
+inline void VM::newStackFrame(const Segment &segment, size_t id) {
     StackFrame frame;
     frame.segmentIndex = id;
     frame.number_of_locals = segment.locals.size();
@@ -51,25 +51,25 @@ void VM::newStackFrame(const Segment &segment, size_t id) {
         setLocal(variable.index, &val);
     }
 }
-void VM::popStackFrame() {
-    for (size_t i = 0 ; i < callStack.back().number_of_locals; i++)
+inline void VM::popStackFrame() {
+    for (size_t i = 0; i < callStack.back().number_of_locals; i++)
         free(callStack.back().locals[i]);
     free(callStack.back().locals);
     callStack.pop_back();
 }
-void *VM::getLocal(const size_t index) {
+inline void *VM::getLocal(const size_t index) {
     return callStack.back().locals[index];
 }
-void VM::setLocal(const size_t index, void **value) {
+inline void VM::setLocal(const size_t index, void **value) {
     callStack.back().locals[index] = *value;
 }
-void *VM::getGlobal(size_t index) {
+inline void *VM::getGlobal(size_t index) {
     return callStack[0].locals[index];
 }
-void VM::setGlobal(const size_t index, void **value) {
+inline void VM::setGlobal(const size_t index, void **value) {
     callStack[0].locals[index] = *value;
 }
-void VM::pushStack(void *value, size_t size) {
+inline void VM::pushStack(void *value, size_t size) {
     if (stackSize + size > stackCapacity) {
         stackCapacity *= 2;
         stack = realloc(stack, stackCapacity);
@@ -77,11 +77,14 @@ void VM::pushStack(void *value, size_t size) {
     memcpy(static_cast<char *>(stack) + stackSize, value, size);
     stackSize += size;
 }
-void *VM::popStack(size_t size) {
+inline void *VM::popStack(size_t size) {
     void *value = malloc(size);
     stackSize -= size;
     memcpy(value, static_cast<char *>(stack) + stackSize, size);
     return value;
+}
+void *VM::topStack(size_t size) {
+    return static_cast<char *>(stack) + stackSize - size;
 }
 
 void VM::run(const Program &program) {

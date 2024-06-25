@@ -87,6 +87,7 @@ public:
     void setGlobal(size_t index, void **value);
     void pushStack(void *value, size_t size);
     void *popStack(size_t size);
+    void *topStack(size_t size);
 
     void run(const Program &program);
 };

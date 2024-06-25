@@ -18,6 +18,6 @@ int main(int argc, char **argv) {
     VM vm;
     auto program = compile(input.c_str());
     vm.run(program);
-    std::cout << *static_cast<int32_t *>(vm.popStack(sizeof(int32_t))) << std::endl;
+    std::cout << *static_cast<int32_t *>(vm.topStack(sizeof(int32_t))) << std::endl;
     return EXIT_SUCCESS;
 }

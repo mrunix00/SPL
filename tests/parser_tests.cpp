@@ -342,3 +342,21 @@ TEST(ParserTests, IfElseStatement) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, WhileStatement) {
+    const char *input = "while x {\n"
+                        "\treturn x;\n"
+                        "};";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new WhileStatement(
+                    new Node({Identifier, "x"}),
+                    new ScopedBody({
+                            new ReturnStatement(new Node({Identifier, "x"})),
+                    })),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

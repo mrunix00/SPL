@@ -18,7 +18,8 @@ struct AbstractSyntaxTree {
         ReturnStatement,
         TypeCast,
         FunctionCall,
-        IfStatement
+        IfStatement,
+        WhileStatement
     } nodeType{Type::Invalid};
     virtual ~AbstractSyntaxTree() = default;
     virtual bool operator==(const AbstractSyntaxTree &other) const = 0;
@@ -96,6 +97,14 @@ struct IfStatement : public AbstractSyntaxTree {
     std::optional<AbstractSyntaxTree *> elseBody;
     IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody, AbstractSyntaxTree *elseBody);
     IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody);
+    bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
+};
+
+struct WhileStatement : public AbstractSyntaxTree {
+    AbstractSyntaxTree *condition;
+    AbstractSyntaxTree *body;
+    WhileStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *body);
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };

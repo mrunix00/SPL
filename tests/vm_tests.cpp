@@ -50,37 +50,40 @@ TEST(VM, CompoundExpression) {
 }
 
 TEST(VM, SimpleVariableDeclaration) {
-    const char *input = "define a : i32 = 42;";
+    const char *input = "define a : i32 = 42;"
+                        "a;";
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.getGlobal(0)), 42);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
 }
 
 TEST(VM, SimpleVariableAssignment) {
-    const char *input = "define a : i32 = 42; a = 43;";
+    const char *input = "define a : i32 = 42; a = 43; a;";
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.getGlobal(0)), 43);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
 }
 
 TEST(VM, SimpleIfCondition) {
     const char *input = "define a : i32 = 69;"
-                        "if 10 > 0 { a = 42; };";
+                        "if 10 > 0 { a = 42; };"
+                        "a;";
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.getGlobal(0)), 42);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
 }
 
 TEST(VM, SimpleIfElseCondition) {
     const char *input = "define a : i32 = 69;"
-                        "if 10 < 0 { a = 42; } else { a = 43; };";
+                        "if 10 < 0 { a = 42; } else { a = 43; };"
+                        "a;";
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.getGlobal(0)), 43);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
 }
 
 TEST(VM, SimpleFunctionDeclaration) {
@@ -99,4 +102,14 @@ TEST(VM, RecursiveFunction) {
     auto program = compile(input);
     vm.run(program);
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 55);
+}
+
+TEST(VM, SimpleWhileLoop) {
+    const char *input = "define a : i32 = 0;"
+                        "while a < 10 { a = a + 1; };"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 10);
 }

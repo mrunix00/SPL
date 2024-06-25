@@ -341,6 +341,30 @@ void IfStatement::compile(Program &program, Segment &segment) const {
     }
 }
 
+WhileStatement::WhileStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *body)
+    : condition(condition), body(body) {
+    nodeType = Type::WhileStatement;
+    typeStr = "WhileStatement";
+    assert(condition != nullptr, "Condition can't be null!");
+    assert(body != nullptr, "Body can't be null!");
+}
+bool WhileStatement::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherWhileStatement = dynamic_cast<const WhileStatement &>(other);
+    return *condition == *otherWhileStatement.condition && *body == *otherWhileStatement.body;
+}
+void WhileStatement::compile(Program &program, Segment &segment) const {
+    size_t jumpIndex = segment.instructions.size();
+    condition->compile(program, segment);
+    size_t bodyIndex = segment.instructions.size();
+    segment.instructions.push_back(
+            Instruction{.type = Instruction::InstructionType::JumpIfFalse});
+    body->compile(program, segment);
+    segment.instructions.push_back(
+            Instruction{.type = Instruction::InstructionType::Jump, .params = {.index = jumpIndex}});
+    segment.instructions[bodyIndex].params.index = segment.instructions.size();
+}
+
 Program compile(const char *input) {
     Program program;
     auto ast = parse(input);

@@ -27,7 +27,7 @@
 %token LParen RParen LBrace RBrace LBracket RBracket
 
 %token <str> Number Identifier
-%type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement
+%type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration
 
 %left Plus Minus
@@ -49,6 +49,12 @@ IfStatement:
     }
     | If Expression ScopedBody Else ScopedBody {
         $$ = new IfStatement((AbstractSyntaxTree*) $2, (AbstractSyntaxTree*) $3, (AbstractSyntaxTree*) $5);
+    }
+    ;
+
+WhileStatement:
+    While Expression ScopedBody {
+        $$ = new WhileStatement((AbstractSyntaxTree*) $2, (AbstractSyntaxTree*) $3);
     }
     ;
 
@@ -144,6 +150,7 @@ Expression:
     | TypeCast { $$ = $1; }
     | FunctionCall { $$ = $1; }
     | IfStatement { $$ = $1; }
+    | WhileStatement { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement((AbstractSyntaxTree*) $2);
     }

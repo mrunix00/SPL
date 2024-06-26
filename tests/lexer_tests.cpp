@@ -56,7 +56,7 @@ TEST(Lexer, String) {
 }
 
 TEST(Lexer, ArithmeticOperators) {
-    auto actual = lex("+-*/%=");
+    auto actual = lex("+-*/%=++--+=-=");
     std::vector<Token> expected = {
             {Plus, "+"},
             {Minus, "-"},
@@ -64,6 +64,10 @@ TEST(Lexer, ArithmeticOperators) {
             {Divide, "/"},
             {Modulo, "%"},
             {Assign, "="},
+            {Increment, "++"},
+            {Decrement, "--"},
+            {IncrementAssign, "+="},
+            {DecrementAssign, "-="},
             {YYEOF},
     };
     TEST_LEX(actual, expected)

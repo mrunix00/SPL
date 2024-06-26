@@ -12,6 +12,10 @@
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* ignore multi-line comments */ }
 [0-9]+                      { yylval.str = strdup(yytext); return Number; }
 \"([^\\\"]|\\.)*\"          { return String;}
+"++"                        { return Increment; }
+"--"                        { return Decrement; }
+"+="                        { return IncrementAssign; }
+"-="                        { return DecrementAssign; }
 "+"                         { return Plus; }
 "-"                         { return Minus; }
 "*"                         { return Multiply; }

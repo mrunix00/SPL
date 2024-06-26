@@ -20,6 +20,7 @@
 }
 
 %token String Plus Minus Multiply Divide Modulo Assign
+%token Increment Decrement IncrementAssign DecrementAssign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define Function If Else While Return
 %token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool True False

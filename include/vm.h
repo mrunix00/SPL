@@ -21,6 +21,8 @@ struct Instruction {
         LessEqualI32,
         EqualI32,
         NotEqualI32,
+        IncrementI32,
+        DecrementI32,
         StoreGlobalI32,
         StoreLocalI32,
         LoadGlobalI32,

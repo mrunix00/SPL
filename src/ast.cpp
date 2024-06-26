@@ -366,13 +366,38 @@ void WhileStatement::compile(Program &program, Segment &segment) const {
 }
 
 UnaryExpression::UnaryExpression(AbstractSyntaxTree *expression, Token op, UnaryExpression::Side side)
-        : expression(expression), op(std::move(op)), side(side) {
+    : expression(expression), op(std::move(op)), side(side) {
     nodeType = Type::UnaryExpression;
     typeStr = "UnaryExpression";
     assert(expression != nullptr, "Expression can't be null!");
 }
 void UnaryExpression::compile(Program &program, Segment &segment) const {
-    AbstractSyntaxTree::compile(program, segment);
+    expression->compile(program, segment);
+    size_t index = segment.instructions.size() - 1;
+    switch (op.type) {
+        case Increment:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementI32});
+            break;
+        case Decrement:
+            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DecrementI32});
+            break;
+        default:
+            throw std::runtime_error("[UnaryExpression::compile] Invalid operator: " + op.value);
+    }
+    if (segment.instructions[index].type == Instruction::InstructionType::LoadLocalI32)
+        segment.instructions.push_back(
+                Instruction{
+                        .type = Instruction::InstructionType::StoreLocalI32,
+                        .params = {.index = segment.find_local(dynamic_cast<Node &>(*expression).token.value)},
+                });
+    else if (segment.instructions[index].type == Instruction::InstructionType::LoadGlobalI32)
+        segment.instructions.push_back(
+                Instruction{
+                        .type = Instruction::InstructionType::StoreGlobalI32,
+                        .params = {.index = program.find_global(dynamic_cast<Node &>(*expression).token.value)},
+                });
+    else
+        throw std::runtime_error("[UnaryExpression::compile] Invalid expression type!");
 }
 bool UnaryExpression::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;

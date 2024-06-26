@@ -66,6 +66,46 @@ TEST(VM, SimpleVariableAssignment) {
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
 }
 
+TEST(VM, RightIncrementUnaryOperator) {
+    const char *input = "define a : i32 = 42;"
+                        "a++;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
+}
+
+TEST(VM, RightDecrementUnaryOperator) {
+    const char *input = "define a : i32 = 42;"
+                        "a--;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 41);
+}
+
+TEST(VM, LeftIncrementUnaryOperator) {
+    const char *input = "define a : i32 = 42;"
+                        "++a;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
+}
+
+TEST(VM, LeftDecrementUnaryOperator) {
+    const char *input = "define a : i32 = 42;"
+                        "--a;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 41);
+}
+
 TEST(VM, SimpleIfCondition) {
     const char *input = "define a : i32 = 69;"
                         "if 10 > 0 { a = 42; };"

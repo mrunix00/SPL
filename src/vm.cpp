@@ -154,6 +154,18 @@ void VM::run(const Program &program) {
                 free(b);
                 pushStack(&result, sizeof(int32_t));
             } break;
+            case Instruction::InstructionType::IncrementI32: {
+                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                auto newVal = *val + 1;
+                free(val);
+                pushStack(&newVal, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::DecrementI32: {
+                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                auto newVal = *val - 1;
+                free(val);
+                pushStack(&newVal, sizeof(int32_t));
+            } break;
             case Instruction::InstructionType::LoadI32: {
                 pushStack(((void *) &instruction.params.i32), sizeof(int32_t));
             } break;

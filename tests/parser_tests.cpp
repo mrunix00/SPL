@@ -360,3 +360,33 @@ TEST(ParserTests, WhileStatement) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, UnaryExpression) {
+    const char *input = "x++;"
+                        "x--;"
+                        "++x;"
+                        "--x;";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new UnaryExpression(
+                    new Node({Identifier, "x"}),
+                    {Increment, "++"},
+                    UnaryExpression::Side::RIGHT),
+            new UnaryExpression(
+                    new Node({Identifier, "x"}),
+                    {Decrement, "--"},
+                    UnaryExpression::Side::RIGHT),
+            new UnaryExpression(
+                    new Node({Identifier, "x"}),
+                    {Increment, "++"},
+                    UnaryExpression::Side::LEFT),
+            new UnaryExpression(
+                    new Node({Identifier, "x"}),
+                    {Decrement, "--"},
+                    UnaryExpression::Side::LEFT),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

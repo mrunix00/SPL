@@ -365,6 +365,23 @@ void WhileStatement::compile(Program &program, Segment &segment) const {
     segment.instructions[bodyIndex].params.index = segment.instructions.size();
 }
 
+UnaryExpression::UnaryExpression(AbstractSyntaxTree *expression, Token op, UnaryExpression::Side side)
+        : expression(expression), op(std::move(op)), side(side) {
+    nodeType = Type::UnaryExpression;
+    typeStr = "UnaryExpression";
+    assert(expression != nullptr, "Expression can't be null!");
+}
+void UnaryExpression::compile(Program &program, Segment &segment) const {
+    AbstractSyntaxTree::compile(program, segment);
+}
+bool UnaryExpression::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherUnaryExpression = dynamic_cast<const UnaryExpression &>(other);
+    return *expression == *otherUnaryExpression.expression &&
+           op == otherUnaryExpression.op &&
+           side == otherUnaryExpression.side;
+}
+
 Program compile(const char *input) {
     Program program;
     auto ast = parse(input);

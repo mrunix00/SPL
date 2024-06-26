@@ -29,7 +29,7 @@
 
 %token <str> Number Identifier
 %type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement
-%type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration
+%type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
 
 %left Plus Minus
 %left Multiply Divide
@@ -142,6 +142,20 @@ FunctionCall:
     }
     ;
 
+UnaryExpression:
+    Expression Increment {
+        $$ = new UnaryExpression((AbstractSyntaxTree*) $1, {Increment, "++"}, UnaryExpression::Side::RIGHT);
+    }
+    | Increment Expression {
+        $$ = new UnaryExpression((AbstractSyntaxTree*) $2, {Increment, "++"}, UnaryExpression::Side::LEFT);
+    }
+    | Expression Decrement {
+        $$ = new UnaryExpression((AbstractSyntaxTree*) $1, {Decrement, "--"}, UnaryExpression::Side::RIGHT);
+    }
+    | Decrement Expression {
+        $$ = new UnaryExpression((AbstractSyntaxTree*) $2, {Decrement, "--"}, UnaryExpression::Side::LEFT);
+    }
+
 Expression:
     Identifier { $$ = new Node({Identifier, $1}); }
     | Number { $$ = new Node({Number, $1}); }
@@ -152,6 +166,7 @@ Expression:
     | FunctionCall { $$ = $1; }
     | IfStatement { $$ = $1; }
     | WhileStatement { $$ = $1; }
+    | UnaryExpression { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement((AbstractSyntaxTree*) $2);
     }

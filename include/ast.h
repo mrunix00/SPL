@@ -11,6 +11,7 @@ struct AbstractSyntaxTree {
     enum class Type {
         Invalid,
         Node,
+        UnaryExpression,
         BinaryExpression,
         Declaration,
         ScopedBody,
@@ -19,7 +20,7 @@ struct AbstractSyntaxTree {
         TypeCast,
         FunctionCall,
         IfStatement,
-        WhileStatement
+        WhileStatement,
     } nodeType{Type::Invalid};
     virtual ~AbstractSyntaxTree() = default;
     virtual bool operator==(const AbstractSyntaxTree &other) const = 0;
@@ -40,6 +41,18 @@ struct BinaryExpression final : public AbstractSyntaxTree {
     AbstractSyntaxTree *right{};
     Token op;
     BinaryExpression(AbstractSyntaxTree *left, AbstractSyntaxTree *right, Token op);
+    bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
+};
+
+struct UnaryExpression final : public AbstractSyntaxTree {
+    enum class Side {
+        LEFT,
+        RIGHT,
+    } side;
+    AbstractSyntaxTree *expression;
+    Token op;
+    UnaryExpression(AbstractSyntaxTree *expression, Token op, Side side);
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };

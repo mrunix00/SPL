@@ -79,7 +79,25 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
         }
         return;
     }
+
     left->compile(program, segment);
+    if (right->nodeType == AbstractSyntaxTree::Type::Node &&
+        ((Node*)right)->token.value == "1" &&
+        left->nodeType == AbstractSyntaxTree::Type::Node &&
+        ((Node*)left)->token.type == Identifier) {
+        switch (op.type) {
+            case Plus:
+                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementI32});
+                return;
+            case Minus:
+                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DecrementI32});
+                return;
+            case Multiply:
+            case Divide:
+                return;
+        }
+    }
+
     right->compile(program, segment);
     switch (op.type) {
         case Plus:

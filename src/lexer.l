@@ -60,7 +60,6 @@
 "->"                        { return Arrow; }
 "["                         { return LBracket; }
 "]"                         { return RBracket; }
-"->"                        { return Arrow; }
 [a-z_A-Z]+[a-z_A-Z0-9]*     { yylval.str = strdup(yytext); return Identifier; }
 
 %%

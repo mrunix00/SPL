@@ -80,11 +80,67 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
         return;
     }
 
+    if (right->nodeType == AbstractSyntaxTree::Type::Node &&
+        left->nodeType == AbstractSyntaxTree::Type::Node &&
+        ((Node *) left)->token.type == Identifier &&
+        ((Node *) right)->token.type == Number) {
+        Instruction instruction;
+        bool isLocal = segment.find_local(((Node *) left)->token.value) != -1;
+        if (isLocal) {
+            instruction.params.ri = {
+                    .index = segment.find_local(((Node *) left)->token.value),
+                    .i32 = std::stoi(((Node *) right)->token.value),
+            };
+        } else if (program.find_global(((Node *) left)->token.value) != -1) {
+            instruction.params.ri = {
+                    .index = program.find_global(((Node *) left)->token.value),
+                    .i32 = std::stoi(((Node *) right)->token.value),
+            };
+        } else {
+            throw std::runtime_error("[BinaryExpression::compile] Identifier not found: " + ((Node *) left)->token.value);
+        }
+
+        switch (op.type) {
+            case Plus:
+                instruction.type = isLocal ? Instruction::InstructionType::AddI32_RI
+                                           : Instruction::InstructionType::AddI32_GI;
+                break;
+            case Minus:
+                instruction.type = isLocal ? Instruction::InstructionType::SubI32_RI
+                                           : Instruction::InstructionType::SubI32_GI;
+                break;
+            case Multiply:
+                instruction.type = isLocal ? Instruction::InstructionType::MulI32_RI
+                                           : Instruction::InstructionType::MulI32_GI;
+                break;
+            case Divide:
+                instruction.type = isLocal ? Instruction::InstructionType::DivI32_RI
+                                           : Instruction::InstructionType::DivI32_GI;
+                break;
+            case Modulo:
+                instruction.type = isLocal ? Instruction::InstructionType::ModI32_RI
+                                           : Instruction::InstructionType::ModI32_GI;
+                break;
+            case Greater:
+                instruction.type = isLocal ? Instruction::InstructionType::GreaterI32_RI
+                                           : Instruction::InstructionType::GreaterI32_GI;
+                break;
+            case Less:
+                instruction.type = isLocal ? Instruction::InstructionType::LessI32_RI
+                                           : Instruction::InstructionType::LessI32_GI;
+                break;
+            default:
+                throw std::runtime_error("[BinaryExpression::compile] Invalid operator: " + op.value);
+        }
+        segment.instructions.push_back(instruction);
+        return;
+    }
+
     left->compile(program, segment);
     if (right->nodeType == AbstractSyntaxTree::Type::Node &&
-        ((Node*)right)->token.value == "1" &&
+        ((Node *) right)->token.value == "1" &&
         left->nodeType == AbstractSyntaxTree::Type::Node &&
-        ((Node*)left)->token.type == Identifier) {
+        ((Node *) left)->token.type == Identifier) {
         switch (op.type) {
             case Plus:
                 segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementI32});
@@ -173,7 +229,6 @@ bool Declaration::operator==(const AbstractSyntaxTree &other) const {
 void Declaration::compile(Program &program, Segment &segment) const {
     if (!type.has_value())
         throw std::runtime_error("[Declaration::compile] Type deduction is not implemented!");
-
 
     switch (type.value()->nodeType) {
         case AbstractSyntaxTree::Type::Node: {

@@ -1,5 +1,6 @@
 #include "vm.h"
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 
 Program::Program() {
@@ -106,12 +107,32 @@ void VM::run(const Program &program) {
                 free(b);
                 pushStack(&result, sizeof(int32_t));
             } break;
+            case Instruction::InstructionType::AddI32_RI: {
+                auto a = static_cast<int32_t *>(getLocal(instruction.params.ri.index));
+                auto result = *a + instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::AddI32_GI: {
+                auto a = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                auto result = *a + instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
             case Instruction::InstructionType::SubI32: {
                 auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 auto result = *a - *b;
                 free(a);
                 free(b);
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::SubI32_RI: {
+                auto a = static_cast<int32_t *>(getLocal(instruction.params.ri.index));
+                auto result = *a - instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::SubI32_GI: {
+                auto a = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                auto result = *a - instruction.params.ri.i32;
                 pushStack(&result, sizeof(int32_t));
             } break;
             case Instruction::InstructionType::MulI32: {
@@ -122,12 +143,32 @@ void VM::run(const Program &program) {
                 free(b);
                 pushStack(&result, sizeof(int32_t));
             } break;
+            case Instruction::InstructionType::MulI32_RI: {
+                auto a = static_cast<int32_t *>(getLocal(instruction.params.ri.index));
+                auto result = *a * instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::MulI32_GI: {
+                auto a = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                auto result = *a * instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
             case Instruction::InstructionType::DivI32: {
                 auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 auto result = *a / *b;
                 free(a);
                 free(b);
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::DivI32_RI: {
+                auto a = static_cast<int32_t *>(getLocal(instruction.params.ri.index));
+                auto result = *a / instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::DivI32_GI: {
+                auto a = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                auto result = *a / instruction.params.ri.i32;
                 pushStack(&result, sizeof(int32_t));
             } break;
             case Instruction::InstructionType::ModI32: {
@@ -138,6 +179,16 @@ void VM::run(const Program &program) {
                 free(b);
                 pushStack(&result, sizeof(int32_t));
             } break;
+            case Instruction::InstructionType::ModI32_RI: {
+                auto a = static_cast<int32_t *>(getLocal(instruction.params.ri.index));
+                auto result = *a % instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::ModI32_GI: {
+                auto a = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                auto result = *a % instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
             case Instruction::InstructionType::GreaterI32: {
                 auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
@@ -146,12 +197,32 @@ void VM::run(const Program &program) {
                 free(b);
                 pushStack(&result, sizeof(int32_t));
             } break;
+            case Instruction::InstructionType::GreaterI32_RI: {
+                auto a = static_cast<int32_t *>(getLocal(instruction.params.ri.index));
+                int32_t result = (*a) > instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::GreaterI32_GI : {
+                auto a = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                int32_t result = (*a) > instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
             case Instruction::InstructionType::LessI32: {
                 auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
                 int32_t result = (*a) < (*b);
                 free(a);
                 free(b);
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::LessI32_RI: {
+                auto a = static_cast<int32_t *>(getLocal(instruction.params.ri.index));
+                int32_t result = (*a) < instruction.params.ri.i32;
+                pushStack(&result, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::LessI32_GI: {
+                auto a = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                int32_t result = (*a) < instruction.params.ri.i32;
                 pushStack(&result, sizeof(int32_t));
             } break;
             case Instruction::InstructionType::IncrementI32: {

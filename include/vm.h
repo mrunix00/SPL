@@ -10,13 +10,27 @@ struct Instruction {
     enum InstructionType : uint8_t {
         Invalid = 0,
         AddI32,
+        AddI32_RI,
+        AddI32_GI,
         SubI32,
+        SubI32_RI,
+        SubI32_GI,
         MulI32,
+        MulI32_RI,
+        MulI32_GI,
         DivI32,
+        DivI32_RI,
+        DivI32_GI,
         ModI32,
+        ModI32_RI,
+        ModI32_GI,
         LoadI32,
         GreaterI32,
+        GreaterI32_RI,
+        GreaterI32_GI,
         LessI32,
+        LessI32_RI,
+        LessI32_GI,
         GreaterEqualI32,
         LessEqualI32,
         EqualI32,
@@ -36,6 +50,10 @@ struct Instruction {
         void *ptr;
         size_t index;
         int32_t i32;
+        struct {
+            size_t index;
+            int32_t i32;
+        } ri;
     } params{};
 };
 

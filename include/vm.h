@@ -10,37 +10,41 @@ struct Instruction {
     enum InstructionType : uint8_t {
         Invalid = 0,
         AddI32,
-        AddI32_RI,
-        AddI32_GI,
+        AddI64,
         SubI32,
-        SubI32_RI,
-        SubI32_GI,
+        SubI64,
         MulI32,
-        MulI32_RI,
-        MulI32_GI,
+        MulI64,
         DivI32,
-        DivI32_RI,
-        DivI32_GI,
+        DivI64,
         ModI32,
-        ModI32_RI,
-        ModI32_GI,
-        LoadI32,
+        ModI64,
         GreaterI32,
-        GreaterI32_RI,
-        GreaterI32_GI,
+        GreaterI64,
         LessI32,
-        LessI32_RI,
-        LessI32_GI,
+        LessI64,
         GreaterEqualI32,
+        GreaterEqualI64,
         LessEqualI32,
+        LessEqualI64,
         EqualI32,
+        EqualI64,
         NotEqualI32,
+        NotEqualI64,
         IncrementI32,
+        IncrementI64,
         DecrementI32,
+        DecrementI64,
         StoreGlobalI32,
+        StoreGlobalI64,
         StoreLocalI32,
+        StoreLocalI64,
+        LoadI32,
+        LoadI64,
         LoadGlobalI32,
+        LoadGlobalI64,
         LoadLocalI32,
+        LoadLocalI64,
         Return,
         Call,
         JumpIfFalse,
@@ -50,10 +54,15 @@ struct Instruction {
         void *ptr;
         size_t index;
         int32_t i32;
+        int64_t i64;
         struct {
             size_t index;
             int32_t i32;
-        } ri;
+        } ri32;
+        struct {
+            size_t index;
+            int64_t i64;
+        } ri64;
     } params{};
 };
 
@@ -62,6 +71,7 @@ struct Variable {
     enum class Type {
         Invalid = 0,
         I32,
+        I64,
         Function
     } type;
     size_t index;

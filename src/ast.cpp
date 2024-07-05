@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "utils.h"
 
 #include <stdexcept>
 #include <utility>
@@ -19,28 +20,25 @@ bool Node::operator==(const AbstractSyntaxTree &other) const {
 void Node::compile(Program &program, Segment &segment) const {
     switch (token.type) {
         case Number: {
+            try {
+                segment.instructions.push_back(
+                        Instruction{
+                                .type = Instruction::InstructionType::LoadI32,
+                                .params = {.i32 = std::stoi(token.value)},
+                        });
+                return;
+            } catch (std::out_of_range &) {
+                goto long64;
+            }
+        long64:
             segment.instructions.push_back(
                     Instruction{
-                            .type = Instruction::InstructionType::LoadI32,
-                            .params = {.i32 = std::stoi(token.value)},
+                            .type = Instruction::InstructionType::LoadI64,
+                            .params = {.i64 = std::stol(token.value)},
                     });
         } break;
         case Identifier: {
-            if (segment.find_local(token.value) != -1) {
-                segment.instructions.push_back(
-                        Instruction{
-                                .type = Instruction::InstructionType::LoadLocalI32,
-                                .params = {.index = segment.find_local(token.value)},
-                        });
-            } else if (program.find_global(token.value) != -1) {
-                segment.instructions.push_back(
-                        Instruction{
-                                .type = Instruction::InstructionType::LoadGlobalI32,
-                                .params = {.index = program.find_global(token.value)},
-                        });
-            } else {
-                throw std::runtime_error("[Node::compile] Identifier not found: " + token.value);
-            }
+            emitLoad(program, segment, token.value);
         } break;
         default:
             throw std::runtime_error("[Node::compile] This should not be accessed!");
@@ -61,99 +59,16 @@ bool BinaryExpression::operator==(const AbstractSyntaxTree &other) const {
            *right == *otherBinaryExpression.right &&
            op == otherBinaryExpression.op;
 }
+
+// TODO: Add support for other types
 void BinaryExpression::compile(Program &program, Segment &segment) const {
     if (op.type == Assign) {
         right->compile(program, segment);
-        if (segment.find_local(dynamic_cast<Node &>(*left).token.value)) {
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::StoreLocalI32,
-                            .params = {.index = segment.find_local(dynamic_cast<Node &>(*left).token.value)},
-                    });
-        } else if (program.find_global(dynamic_cast<Node &>(*left).token.value) != -1) {
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::StoreGlobalI32,
-                            .params = {.index = program.find_global(dynamic_cast<Node &>(*left).token.value)},
-                    });
-        }
-        return;
-    }
-
-    if (right->nodeType == AbstractSyntaxTree::Type::Node &&
-        left->nodeType == AbstractSyntaxTree::Type::Node &&
-        ((Node *) left)->token.type == Identifier &&
-        ((Node *) right)->token.type == Number) {
-        Instruction instruction;
-        bool isLocal = segment.find_local(((Node *) left)->token.value) != -1;
-        if (isLocal) {
-            instruction.params.ri = {
-                    .index = segment.find_local(((Node *) left)->token.value),
-                    .i32 = std::stoi(((Node *) right)->token.value),
-            };
-        } else if (program.find_global(((Node *) left)->token.value) != -1) {
-            instruction.params.ri = {
-                    .index = program.find_global(((Node *) left)->token.value),
-                    .i32 = std::stoi(((Node *) right)->token.value),
-            };
-        } else {
-            throw std::runtime_error("[BinaryExpression::compile] Identifier not found: " + ((Node *) left)->token.value);
-        }
-
-        switch (op.type) {
-            case Plus:
-                instruction.type = isLocal ? Instruction::InstructionType::AddI32_RI
-                                           : Instruction::InstructionType::AddI32_GI;
-                break;
-            case Minus:
-                instruction.type = isLocal ? Instruction::InstructionType::SubI32_RI
-                                           : Instruction::InstructionType::SubI32_GI;
-                break;
-            case Multiply:
-                instruction.type = isLocal ? Instruction::InstructionType::MulI32_RI
-                                           : Instruction::InstructionType::MulI32_GI;
-                break;
-            case Divide:
-                instruction.type = isLocal ? Instruction::InstructionType::DivI32_RI
-                                           : Instruction::InstructionType::DivI32_GI;
-                break;
-            case Modulo:
-                instruction.type = isLocal ? Instruction::InstructionType::ModI32_RI
-                                           : Instruction::InstructionType::ModI32_GI;
-                break;
-            case Greater:
-                instruction.type = isLocal ? Instruction::InstructionType::GreaterI32_RI
-                                           : Instruction::InstructionType::GreaterI32_GI;
-                break;
-            case Less:
-                instruction.type = isLocal ? Instruction::InstructionType::LessI32_RI
-                                           : Instruction::InstructionType::LessI32_GI;
-                break;
-            default:
-                throw std::runtime_error("[BinaryExpression::compile] Invalid operator: " + op.value);
-        }
-        segment.instructions.push_back(instruction);
+        emitStore(program, segment, dynamic_cast<Node &>(*left).token.value);
         return;
     }
 
     left->compile(program, segment);
-    if (right->nodeType == AbstractSyntaxTree::Type::Node &&
-        ((Node *) right)->token.value == "1" &&
-        left->nodeType == AbstractSyntaxTree::Type::Node &&
-        ((Node *) left)->token.type == Identifier) {
-        switch (op.type) {
-            case Plus:
-                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementI32});
-                return;
-            case Minus:
-                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DecrementI32});
-                return;
-            case Multiply:
-            case Divide:
-                return;
-        }
-    }
-
     right->compile(program, segment);
     switch (op.type) {
         case Plus:
@@ -226,25 +141,28 @@ bool Declaration::operator==(const AbstractSyntaxTree &other) const {
            identifier == otherDeclaration.identifier &&
            value.has_value() == otherDeclaration.value.has_value();
 }
+
 void Declaration::compile(Program &program, Segment &segment) const {
     if (!type.has_value())
         throw std::runtime_error("[Declaration::compile] Type deduction is not implemented!");
-
     switch (type.value()->nodeType) {
         case AbstractSyntaxTree::Type::Node: {
-            switch (((Node *) type.value())->token.type) {
-                case I32: {
-                    value.value()->compile(program, segment);
-                    segment.instructions.push_back({
-                            .type = segment.id == 0
-                                            ? Instruction::InstructionType::StoreGlobalI32
-                                            : Instruction::InstructionType::StoreLocalI32,
-                            .params = {.index = segment.locals.size()},
-                    });
-                    segment.declare_variable(identifier.token.value, Variable::Type::I32);
-                } break;
-                default:
-                    throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
+            Node *initNode = (Node *) value.value();
+            Node *typeNode = (Node *) type.value();
+            if (initNode->token.type == Number) {
+                switch (typeNode->token.type) {
+                    DECLARE_NUMBER_VAR(I32, i32)
+                    DECLARE_NUMBER_VAR(I64, i64)
+                    default:
+                        throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
+                }
+            } else {
+                switch (typeNode->token.type) {
+                    DECLARE_OTHER_VAR(I32)
+                    DECLARE_OTHER_VAR(I64)
+                    default:
+                        throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
+                }
             }
         } break;
         case AbstractSyntaxTree::Type::FunctionDeclaration: {
@@ -255,7 +173,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
             for (auto argument: functionDeclaration->arguments) {
                 newSegment.locals[argument->identifier.token.value] = {
                         .name = argument->identifier.token.value,
-                        .type = Variable::Type::I32,// TODO: Handle all variable types
+                        .type = varTypeConvert(functionDeclaration->returnType),
                         .index = newSegment.locals.size(),
                 };
             }
@@ -444,33 +362,45 @@ UnaryExpression::UnaryExpression(AbstractSyntaxTree *expression, Token op, Unary
     typeStr = "UnaryExpression";
     assert(expression != nullptr, "Expression can't be null!");
 }
+
 void UnaryExpression::compile(Program &program, Segment &segment) const {
-    expression->compile(program, segment);
-    size_t index = segment.instructions.size() - 1;
+    if (expression->nodeType != AbstractSyntaxTree::Type::Node)
+        throw std::runtime_error("[UnaryExpression::compile] Invalid expression varType!");
+    Node *node = dynamic_cast<Node *>(expression);
+    if (node->token.type != Identifier)
+        throw std::runtime_error("[UnaryExpression::compile] Invalid expression varType!");
+
+    Variable::Type varType;
+    if (segment.find_local(node->token.value) != -1) {
+        varType = segment.locals[node->token.value].type;
+    } else if (program.find_global(node->token.value) != -1) {
+        varType = program.segments[0].locals[node->token.value].type;
+    } else {
+        throw std::runtime_error("[UnaryExpression::compile] Identifier not found: " + node->token.value);
+    }
+
+    emitLoad(program, segment, node->token.value);
     switch (op.type) {
         case Increment:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementI32});
+            switch (varType) {
+                VAR_CASE(Increment, I32)
+                VAR_CASE(Increment, I64)
+                default:
+                    throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");
+            }
             break;
         case Decrement:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DecrementI32});
+            switch (varType) {
+                VAR_CASE(Decrement, I32)
+                VAR_CASE(Decrement, I64)
+                default:
+                    throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");
+            }
             break;
         default:
             throw std::runtime_error("[UnaryExpression::compile] Invalid operator: " + op.value);
     }
-    if (segment.instructions[index].type == Instruction::InstructionType::LoadLocalI32)
-        segment.instructions.push_back(
-                Instruction{
-                        .type = Instruction::InstructionType::StoreLocalI32,
-                        .params = {.index = segment.find_local(dynamic_cast<Node &>(*expression).token.value)},
-                });
-    else if (segment.instructions[index].type == Instruction::InstructionType::LoadGlobalI32)
-        segment.instructions.push_back(
-                Instruction{
-                        .type = Instruction::InstructionType::StoreGlobalI32,
-                        .params = {.index = program.find_global(dynamic_cast<Node &>(*expression).token.value)},
-                });
-    else
-        throw std::runtime_error("[UnaryExpression::compile] Invalid expression type!");
+    emitStore(program, segment, node->token.value);
 }
 bool UnaryExpression::operator==(const AbstractSyntaxTree &other) const {
     if (other.nodeType != nodeType) return false;

@@ -58,6 +58,15 @@ TEST(VM, SimpleVariableDeclaration) {
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
 }
 
+TEST(VM, SimpleI64VariableDeclaration) {
+    const char *input = "define a : i64 = 42;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int64_t *>(vm.topStack(sizeof(int64_t))), 42);
+}
+
 TEST(VM, SimpleVariableAssignment) {
     const char *input = "define a : i32 = 42; a = 43; a;";
     VM vm;
@@ -76,6 +85,16 @@ TEST(VM, RightIncrementUnaryOperator) {
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
 }
 
+TEST(VM, RightIncrementUnaryOperatorI64) {
+    const char *input = "define a : i64 = 42;"
+                        "a++;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int64_t ))), 43);
+}
+
 TEST(VM, RightDecrementUnaryOperator) {
     const char *input = "define a : i32 = 42;"
                         "a--;"
@@ -84,6 +103,16 @@ TEST(VM, RightDecrementUnaryOperator) {
     auto program = compile(input);
     vm.run(program);
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 41);
+}
+
+TEST(VM, RightDecrementUnaryOperatorI64) {
+    const char *input = "define a : i64 = 42;"
+                        "a--;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int64_t))), 41);
 }
 
 TEST(VM, LeftIncrementUnaryOperator) {

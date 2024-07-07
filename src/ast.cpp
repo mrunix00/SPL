@@ -1,13 +1,7 @@
 #include "ast.h"
 #include "utils.h"
 
-#include <stdexcept>
 #include <utility>
-
-static inline void assert(bool condition, const char *message) {
-    if (!condition)
-        throw std::runtime_error("Assertion failed: " + std::string(message));
-}
 
 Node::Node(Token token) : token(std::move(token)) {
     nodeType = Type::Node;
@@ -21,22 +15,7 @@ void Node::compile(Program &program, Segment &segment) const {
     switch (token.type) {
         case Number: {
             auto type = deduceType(program, segment, (AbstractSyntaxTree *) this);
-            switch (type) {
-                case Variable::Type::I32:
-                    return segment.instructions.push_back(
-                            Instruction{
-                                    .type = Instruction::InstructionType::LoadI32,
-                                    .params = {.i32 = std::stoi(token.value)},
-                            });
-                case Variable::Type::I64:
-                    return segment.instructions.push_back(
-                            Instruction{
-                                    .type = Instruction::InstructionType::LoadI64,
-                                    .params = {.i64 = std::stol(token.value)},
-                            });
-                default:
-                    throw std::runtime_error("[Node::compile] Invalid type: " + token.value);
-            }
+            return segment.instructions.push_back(emitLoad(type, token));
         }
         case Identifier: {
             return emitLoad(program, segment, token.value);
@@ -69,28 +48,12 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
     }
     auto leftType = deduceType(program, segment, left);
     auto rightType = deduceType(program, segment, right);
-    auto finalType = deduceType(program, segment, (AbstractSyntaxTree*) this);
+    auto finalType = deduceType(program, segment, (AbstractSyntaxTree *) this);
 
     left->compile(program, segment);
-    if (leftType != finalType) {
-        switch (leftType) {
-            case Variable::Type::I32:
-                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::ConvertI32toI64});
-                break;
-            default:
-                throw std::runtime_error("[BinaryExpression::compile] Invalid type: " + left->typeStr);
-        }
-    }
+    typeCast(segment.instructions, leftType, finalType);
     right->compile(program, segment);
-    if (rightType != finalType) {
-        switch (rightType) {
-            case Variable::Type::I32:
-                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::ConvertI32toI64});
-                break;
-            default:
-                throw std::runtime_error("[BinaryExpression::compile] Invalid type: "+ right->typeStr);
-        }
-    }
+    typeCast(segment.instructions, rightType, finalType);
     switch (op.type) {
         case Plus:
             return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Add, finalType));

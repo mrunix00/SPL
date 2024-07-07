@@ -45,6 +45,7 @@ struct Instruction {
         LoadGlobalI64,
         LoadLocalI32,
         LoadLocalI64,
+        ConvertI32toI64,
         Return,
         Call,
         JumpIfFalse,

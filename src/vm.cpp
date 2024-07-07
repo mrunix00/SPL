@@ -355,8 +355,12 @@ void VM::run(const Program &program) {
                 auto val = static_cast<int64_t *>(getLocal(instruction.params.index));
                 pushStack((void *) val, sizeof(int64_t));
             } break;
-            default:
-                throw std::runtime_error("[VM::run] Invalid instruction!");
+            case Instruction::ConvertI32toI64: {
+                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
+                int64_t newVal = *val;
+                free(val);
+                pushStack(&newVal, sizeof(int64_t));
+            } break;
         }
         callStack.back().currentInstruction++;
     }

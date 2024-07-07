@@ -67,6 +67,16 @@ TEST(VM, SimpleI64VariableDeclaration) {
     ASSERT_EQ(*static_cast<int64_t *>(vm.topStack(sizeof(int64_t))), 42);
 }
 
+TEST(VM, BinaryExpressionWithMultipleTypes) {
+    const char *input = "define a : i64 = 42;"
+                        "define b : i32 = 42;"
+                        "a + b;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int64_t *>(vm.topStack(sizeof(int64_t))), 84);
+}
+
 TEST(VM, SimpleVariableAssignment) {
     const char *input = "define a : i32 = 42; a = 43; a;";
     VM vm;

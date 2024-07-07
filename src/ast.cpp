@@ -20,26 +20,27 @@ bool Node::operator==(const AbstractSyntaxTree &other) const {
 void Node::compile(Program &program, Segment &segment) const {
     switch (token.type) {
         case Number: {
-            try {
-                segment.instructions.push_back(
-                        Instruction{
-                                .type = Instruction::InstructionType::LoadI32,
-                                .params = {.i32 = std::stoi(token.value)},
-                        });
-                return;
-            } catch (std::out_of_range &) {
-                goto long64;
+            auto type = deduceType(program, segment, (AbstractSyntaxTree *) this);
+            switch (type) {
+                case Variable::Type::I32:
+                    return segment.instructions.push_back(
+                            Instruction{
+                                    .type = Instruction::InstructionType::LoadI32,
+                                    .params = {.i32 = std::stoi(token.value)},
+                            });
+                case Variable::Type::I64:
+                    return segment.instructions.push_back(
+                            Instruction{
+                                    .type = Instruction::InstructionType::LoadI64,
+                                    .params = {.i64 = std::stol(token.value)},
+                            });
+                default:
+                    throw std::runtime_error("[Node::compile] Invalid type: " + token.value);
             }
-        long64:
-            segment.instructions.push_back(
-                    Instruction{
-                            .type = Instruction::InstructionType::LoadI64,
-                            .params = {.i64 = std::stol(token.value)},
-                    });
-        } break;
+        }
         case Identifier: {
-            emitLoad(program, segment, token.value);
-        } break;
+            return emitLoad(program, segment, token.value);
+        }
         default:
             throw std::runtime_error("[Node::compile] This should not be accessed!");
     }
@@ -60,50 +61,59 @@ bool BinaryExpression::operator==(const AbstractSyntaxTree &other) const {
            op == otherBinaryExpression.op;
 }
 
-// TODO: Add support for other types
 void BinaryExpression::compile(Program &program, Segment &segment) const {
     if (op.type == Assign) {
         right->compile(program, segment);
         emitStore(program, segment, dynamic_cast<Node &>(*left).token.value);
         return;
     }
+    auto leftType = deduceType(program, segment, left);
+    auto rightType = deduceType(program, segment, right);
+    auto finalType = deduceType(program, segment, (AbstractSyntaxTree*) this);
 
     left->compile(program, segment);
+    if (leftType != finalType) {
+        switch (leftType) {
+            case Variable::Type::I32:
+                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::ConvertI32toI64});
+                break;
+            default:
+                throw std::runtime_error("[BinaryExpression::compile] Invalid type: " + left->typeStr);
+        }
+    }
     right->compile(program, segment);
+    if (rightType != finalType) {
+        switch (rightType) {
+            case Variable::Type::I32:
+                segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::ConvertI32toI64});
+                break;
+            default:
+                throw std::runtime_error("[BinaryExpression::compile] Invalid type: "+ right->typeStr);
+        }
+    }
     switch (op.type) {
         case Plus:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::AddI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Add, finalType));
         case Minus:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::SubI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Sub, finalType));
         case Multiply:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::MulI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Mul, finalType));
         case Divide:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DivI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Div, finalType));
         case Modulo:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::ModI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Mod, finalType));
         case Greater:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::GreaterI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Greater, finalType));
         case Less:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::LessI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Less, finalType));
         case GreaterEqual:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::GreaterEqualI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::GreaterEqual, finalType));
         case LessEqual:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::LessEqualI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::LessEqual, finalType));
         case Equal:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::EqualI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Equal, finalType));
         case NotEqual:
-            segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::NotEqualI32});
-            break;
+            return segment.instructions.push_back(getInstructionWithType(GenericInstruction::NotEqual, finalType));
         default:
             throw std::runtime_error("[BinaryExpression::compile] Invalid operator: " + op.value);
     }

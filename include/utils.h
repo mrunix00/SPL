@@ -40,29 +40,28 @@
 GENERATE_EMIT_FUNCTION(Load)
 GENERATE_EMIT_FUNCTION(Store)
 
-#define DECLARE_NUMBER_VAR(TYPE, PARAM)                                                          \
-    case TYPE: {                                                                                 \
-        segment.instructions.push_back({.type = Instruction::InstructionType::Load##TYPE,        \
-                                        .params = {.PARAM = std::stoi(initNode->token.value)}}); \
-        segment.instructions.push_back({                                                         \
-                .type = segment.id == 0                                                          \
-                                ? Instruction::InstructionType::StoreGlobal##TYPE                \
-                                : Instruction::InstructionType::StoreLocal##TYPE,                \
-                .params = {.index = segment.locals.size()},                                      \
-        });                                                                                      \
-        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);                  \
-    } break;
-
-#define DECLARE_OTHER_VAR(TYPE)                                                   \
-    case TYPE: {                                                                  \
-        initNode->compile(program, segment);                                      \
-        segment.instructions.push_back({                                          \
-                .type = segment.id == 0                                           \
-                                ? Instruction::InstructionType::StoreGlobal##TYPE \
-                                : Instruction::InstructionType::StoreLocal##TYPE, \
-                .params = {.index = segment.locals.size()},                       \
-        });                                                                       \
-        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);   \
+#define DECLARE_VAR_CASE(TYPE, PARAM)                                                      \
+    case TYPE: {                                                                           \
+        if (!value.has_value()) {                                                          \
+            segment.instructions.push_back({                                               \
+                    .type = Instruction::InstructionType::Load##TYPE,                      \
+                    .params = {.PARAM = 0},                                                \
+            });                                                                            \
+        } else if (((Node *) value.value())->token.type == Number) {                       \
+            segment.instructions.push_back({                                               \
+                    .type = Instruction::InstructionType::Load##TYPE,                      \
+                    .params = {.PARAM = std::stoi(((Node *) value.value())->token.value)}, \
+            });                                                                            \
+        } else {                                                                           \
+            ((Node *) value.value())->compile(program, segment);                           \
+        }                                                                                  \
+        segment.instructions.push_back({                                                   \
+                .type = segment.id == 0                                                    \
+                                ? Instruction::InstructionType::StoreGlobal##TYPE          \
+                                : Instruction::InstructionType::StoreLocal##TYPE,          \
+                .params = {.index = segment.locals.size()},                                \
+        });                                                                                \
+        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);            \
     } break;
 
 #define VAR_CASE(OP, TYPE)                                                                           \

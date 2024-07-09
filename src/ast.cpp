@@ -129,22 +129,11 @@ void Declaration::compile(Program &program, Segment &segment) const {
     }
     switch (type.value()->nodeType) {
         case AbstractSyntaxTree::Type::Node: {
-            Node *initNode = (Node *) value.value();
-            Node *typeNode = (Node *) type.value();
-            if (initNode->token.type == Number) {
-                switch (typeNode->token.type) {
-                    DECLARE_NUMBER_VAR(I32, i32)
-                    DECLARE_NUMBER_VAR(I64, i64)
-                    default:
-                        throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
-                }
-            } else {
-                switch (typeNode->token.type) {
-                    DECLARE_OTHER_VAR(I32)
-                    DECLARE_OTHER_VAR(I64)
-                    default:
-                        throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
-                }
+            switch (((Node *) type.value())->token.type) {
+                DECLARE_VAR_CASE(I32, i32)
+                DECLARE_VAR_CASE(I64, i64)
+                default:
+                    throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
             }
         } break;
         case AbstractSyntaxTree::Type::FunctionDeclaration: {
@@ -163,7 +152,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
             program.segments.push_back(newSegment);
         } break;
         default:
-            throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
+            throw std::runtime_error("[Declaration::compile] Invalid type!");
     }
 }
 

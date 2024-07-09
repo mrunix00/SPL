@@ -58,6 +58,15 @@ TEST(VM, SimpleVariableDeclaration) {
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
 }
 
+TEST(VM, TypeDeduction) {
+    const char *input = "define a = 42;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
+}
+
 TEST(VM, SimpleI64VariableDeclaration) {
     const char *input = "define a : i64 = 42;"
                         "a;";

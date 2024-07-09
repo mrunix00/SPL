@@ -116,8 +116,17 @@ bool Declaration::operator==(const AbstractSyntaxTree &other) const {
 }
 
 void Declaration::compile(Program &program, Segment &segment) const {
-    if (!type.has_value())
-        throw std::runtime_error("[Declaration::compile] Type deduction is not implemented!");
+    if (!type.has_value()) {
+        if (value.has_value()) {
+            auto varType = deduceType(program, segment, value.value());
+            value.value()->compile(program, segment);
+            segment.declare_variable(identifier.token.value, varType);
+            emitStore(program, segment, identifier.token.value);
+        } else {
+            throw std::runtime_error("[Declaration::compile] Cannot deduce the variable type!");
+        }
+        return;
+    }
     switch (type.value()->nodeType) {
         case AbstractSyntaxTree::Type::Node: {
             Node *initNode = (Node *) value.value();

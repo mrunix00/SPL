@@ -174,6 +174,15 @@ TEST(VM, SimpleFunctionDeclaration) {
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 3);
 }
 
+TEST(VM, FunctionWithDifferentReturnType) {
+    const char *input = "define add : function(x: i32, y: i32) -> i64 = { return x + y; };"
+                        "add(20, 10);";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int64_t *>(vm.topStack(sizeof(int64_t))), 30);
+}
+
 TEST(VM, RecursiveFunction) {
     const char *input = "define fib : function(n: i32) -> i32 = { if n < 2 { return n; } else { return fib(n - 1) + fib(n - 2); }; };"
                         "fib(10);";

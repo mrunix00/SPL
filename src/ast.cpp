@@ -392,6 +392,32 @@ bool UnaryExpression::operator==(const AbstractSyntaxTree &other) const {
            side == otherUnaryExpression.side;
 }
 
+ForLoop::ForLoop(AbstractSyntaxTree *initialization, AbstractSyntaxTree *condition, AbstractSyntaxTree *step, AbstractSyntaxTree *body)
+    : initialization(initialization), condition(condition), step(step), body(body) {
+    nodeType = Type::ForLoop;
+    typeStr = "ForLoop";
+}
+bool ForLoop::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherForLoop = dynamic_cast<const ForLoop &>(other);
+    if ((initialization == nullptr || otherForLoop.initialization == nullptr) &&
+        initialization != otherForLoop.initialization)
+        return false;
+    if ((condition == nullptr || otherForLoop.condition == nullptr) &&
+        condition != otherForLoop.condition)
+        return false;
+    if ((step == nullptr || otherForLoop.step == nullptr) &&
+        step != otherForLoop.step)
+        return false;
+    if ((body == nullptr || otherForLoop.body == nullptr) &&
+        body != otherForLoop.body)
+        return false;
+    return *initialization == *otherForLoop.initialization &&
+           *condition == *otherForLoop.condition &&
+           *step == *otherForLoop.step &&
+           *body == *otherForLoop.body;
+}
+
 Program compile(const char *input) {
     Program program;
     auto ast = parse(input);

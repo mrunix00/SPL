@@ -22,13 +22,13 @@
 %token String Plus Minus Multiply Divide Modulo Assign
 %token Increment Decrement IncrementAssign DecrementAssign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
-%token Define Function If Else While Return
+%token Define Function If Else While For Return
 %token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool True False
 %token Colon Comma Semicolon Arrow Newline
 %token LParen RParen LBrace RBrace LBracket RBracket
 
 %token <str> Number Identifier
-%type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement
+%type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement ForLoop
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
 
 %left Plus Minus
@@ -56,6 +56,12 @@ IfStatement:
 WhileStatement:
     While Expression ScopedBody {
         $$ = new WhileStatement(static_cast<AbstractSyntaxTree*>($2), static_cast<AbstractSyntaxTree*>($3));
+    }
+;
+
+ForLoop:
+    For Expression Semicolon Expression Semicolon Expression ScopedBody {
+        $$ = new ForLoop(static_cast<AbstractSyntaxTree*>($2), static_cast<AbstractSyntaxTree*>($4), static_cast<AbstractSyntaxTree*>($6), static_cast<AbstractSyntaxTree*>($7));
     }
 ;
 
@@ -167,6 +173,7 @@ Expression:
     | FunctionCall { $$ = $1; }
     | IfStatement { $$ = $1; }
     | WhileStatement { $$ = $1; }
+    | ForLoop { $$ = $1; }
     | UnaryExpression { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement(static_cast<AbstractSyntaxTree*>($2));

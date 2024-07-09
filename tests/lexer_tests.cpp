@@ -109,7 +109,7 @@ TEST(Lexer, Symbols) {
 
 TEST(Lexer, Keywords) {
     auto actual = lex(
-            "define if else while return "
+            "define if else while for return "
             "u8 u16 u32 u64 i8 i16 i32 i64 "
             "f32 f64 bool true false");
 
@@ -118,6 +118,7 @@ TEST(Lexer, Keywords) {
             {If, "if"},
             {Else, "else"},
             {While, "while"},
+            {For, "for"},
             {Return, "return"},
             {U8, "u8"},
             {U16, "u16"},

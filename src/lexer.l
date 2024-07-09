@@ -36,6 +36,7 @@
 "if"                        { return If; }
 "else"                      { return Else; }
 "while"                     { return While; }
+"for"                       { return For; }
 "return"                    { return Return; }
 "u8"                        { return U8; }
 "u16"                       { return U16; }

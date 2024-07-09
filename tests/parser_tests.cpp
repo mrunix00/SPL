@@ -361,6 +361,35 @@ TEST(ParserTests, WhileStatement) {
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
 
+TEST(ParserTests, ForLoop) {
+    const char *input = "for i = 0; i < 10; i++ {\n"
+                        "\treturn i;\n"
+                        "};";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new ForLoop(
+                    new BinaryExpression(
+                            new Node({Identifier, "i"}),
+                            new Node({Number, "0"}),
+                            {Assign, "="}),
+                    new BinaryExpression(
+                            new Node({Identifier, "i"}),
+                            new Node({Number, "10"}),
+                            {Less, "<"}),
+                    new UnaryExpression(
+                            new Node({Identifier, "i"}),
+                            {Increment, "++"},
+                            UnaryExpression::Side::RIGHT),
+                    new ScopedBody({
+                            new ReturnStatement(new Node({Identifier, "i"})),
+                    })),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}
+
 TEST(ParserTests, UnaryExpression) {
     const char *input = "x++;"
                         "x--;"

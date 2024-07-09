@@ -28,6 +28,12 @@ while x < 42 {
     // do something
 };
 ```
+#### For loops
+```c
+for define i = 0; i < 20; i++ {
+    // do something
+};
+```
 
 ## Roadmap
 - [x] Lexer
@@ -37,7 +43,7 @@ while x < 42 {
 - [x] Functions
 - [x] Conditions
 - [x] While loops
-- [ ] For loops
+- [x] For loops
 - [ ] Arrays
 - [ ] Strings
 - [ ] Hashmaps

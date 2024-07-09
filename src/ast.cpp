@@ -417,6 +417,21 @@ bool ForLoop::operator==(const AbstractSyntaxTree &other) const {
            *step == *otherForLoop.step &&
            *body == *otherForLoop.body;
 }
+void ForLoop::compile(Program &program, Segment &segment) const {
+    size_t condition_index, jump_index;
+    initialization->compile(program, segment);
+    condition_index = segment.instructions.size();
+    condition->compile(program, segment);
+    jump_index = segment.instructions.size();
+    segment.instructions.push_back({Instruction::InstructionType::JumpIfFalse});
+    body->compile(program, segment);
+    step->compile(program, segment);
+    segment.instructions.push_back({
+            .type = Instruction::InstructionType::Jump,
+            .params = {.index = condition_index},
+    });
+    segment.instructions[jump_index].params = {.index = segment.instructions.size()};
+}
 
 Program compile(const char *input) {
     Program program;

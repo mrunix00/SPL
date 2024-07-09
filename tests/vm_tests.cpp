@@ -210,3 +210,15 @@ TEST(VM, SimpleWhileLoop) {
     vm.run(program);
     ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 10);
 }
+
+TEST(VM, SimpleForLoop) {
+    const char *input = "define sum : i32 = 0;"
+                        "for define i = 0; i < 10; i++ {"
+                        "sum = sum + i;"
+                        "};"
+                        "sum;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 45);
+}

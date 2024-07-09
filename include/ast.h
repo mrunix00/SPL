@@ -130,6 +130,7 @@ struct ForLoop : public AbstractSyntaxTree {
     AbstractSyntaxTree *body;
     ForLoop(AbstractSyntaxTree *initialization, AbstractSyntaxTree *condition, AbstractSyntaxTree *step, AbstractSyntaxTree *body);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 std::vector<AbstractSyntaxTree *> parse(const char *input);

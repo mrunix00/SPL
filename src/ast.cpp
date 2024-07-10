@@ -422,11 +422,14 @@ void ForLoop::compile(Program &program, Segment &segment) const {
     segment.instructions[jump_index].params = {.index = segment.instructions.size()};
 }
 
-Program compile(const char *input) {
-    Program program;
+void compile(Program &program, const char *input) {
     auto ast = parse(input);
     for (auto &node: ast) {
         node->compile(program, program.segments[0]);
     }
+}
+Program compile(const char *input) {
+    Program program;
+    compile(program, input);
     return program;
 }

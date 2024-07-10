@@ -88,7 +88,14 @@ void *VM::topStack(size_t size) {
 }
 
 void VM::run(const Program &program) {
-    callStack.front().locals = (void **) malloc(program.segments.front().locals.size() * sizeof(void *));
+    if (callStack.front().number_of_locals != program.segments.front().locals.size()) {
+        void **newPtr = (void **) realloc(callStack.front().locals, program.segments.front().locals.size() * sizeof(void *));
+        if (newPtr == nullptr) {
+            throw std::runtime_error("Memory allocation failure!");
+        } else {
+            callStack.front().locals = newPtr;
+        }
+    }
     for (;;) {
         auto &segment = program.segments[callStack.back().segmentIndex];
         if (callStack.back().currentInstruction == segment.instructions.size() && callStack.back().segmentIndex == 0) {

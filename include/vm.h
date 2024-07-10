@@ -104,7 +104,6 @@ struct StackFrame {
 
 class VM {
     void *stack;
-    size_t stackSize{};
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 
@@ -121,4 +120,5 @@ public:
     void *topStack(size_t size);
 
     void run(const Program &program);
+    size_t stackSize{};
 };

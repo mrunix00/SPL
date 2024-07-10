@@ -134,4 +134,5 @@ struct ForLoop : public AbstractSyntaxTree {
 };
 
 std::vector<AbstractSyntaxTree *> parse(const char *input);
+void compile(Program &program, const char *input);
 Program compile(const char *input);

@@ -25,6 +25,9 @@ struct AbstractSyntaxTree {
     } nodeType{Type::Invalid};
     virtual ~AbstractSyntaxTree() = default;
     virtual bool operator==(const AbstractSyntaxTree &other) const = 0;
+    bool operator!=(const AbstractSyntaxTree &other) const {
+        return !(*this == other);
+    };
     virtual void compile(Program &program, Segment &segment) const {
         throw std::runtime_error("[" + typeStr + "::compile] Unimplemented method!");
     }

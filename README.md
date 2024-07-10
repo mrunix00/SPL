@@ -38,7 +38,7 @@ for define i = 0; i < 20; i++ {
 ## Roadmap
 - [x] Lexer
 - [x] Parser
-- [ ] REPL shell
+- [x] REPL shell
 - [x] Variables
 - [x] Functions
 - [x] Conditions

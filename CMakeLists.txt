@@ -4,7 +4,7 @@ project(SPL)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-O3)
+add_compile_options(-O3 -fpermissive)
 
 file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
 file(GLOB_RECURSE SOURCES src/*.cpp)
@@ -28,6 +28,12 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
+include_directories(libs/linenoise-ng/include)
+add_library(linenoise STATIC
+        libs/linenoise-ng/src/linenoise.cpp
+        libs/linenoise-ng/src/wcwidth.cpp
+        libs/linenoise-ng/src/ConvertUTF.cpp)
+
 flex_target(lexer src/lexer.l "${LEXER_OUT}" DEFINES_FILE ${LEXER_DIR}/lexer.h)
 bison_target(parser src/parser.y "${PARSER_OUT}" DEFINES_FILE ${PARSER_DIR}/parser.h)
 add_flex_bison_dependency(lexer parser)
@@ -35,5 +41,5 @@ add_flex_bison_dependency(lexer parser)
 add_executable(SPL main.cpp ${SOURCES} ${LEXER_OUT} ${PARSER_OUT}
         src/utils.cpp)
 add_executable(tests ${TEST_SOURCES} ${SOURCES} ${LEXER_OUT} ${PARSER_OUT})
-target_link_libraries(SPL)
+target_link_libraries(SPL linenoise)
 target_link_libraries(tests GTest::gtest_main GTest::gmock_main)

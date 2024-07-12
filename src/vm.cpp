@@ -368,6 +368,31 @@ void VM::run(const Program &program) {
                 free(val);
                 pushStack(&newVal, sizeof(int64_t));
             } break;
+            case Instruction::ConvertU32toI64: {
+                auto val = static_cast<uint32_t *>(popStack(sizeof(uint32_t)));
+                int64_t newVal = *val;
+                free(val);
+                pushStack(&newVal, sizeof(int64_t));
+            } break;
+            case Instruction::InstructionType::StoreGlobalU32: {
+                auto val = static_cast<uint32_t *>(popStack(sizeof(uint32_t)));
+                setGlobal(instruction.params.index, (void **) &val);
+            } break;
+            case Instruction::InstructionType::StoreLocalU32: {
+                auto val = static_cast<uint32_t *>(popStack(sizeof(uint32_t)));
+                setLocal(instruction.params.index, (void **) &val);
+            } break;
+            case Instruction::InstructionType::LoadLocalU32: {
+                auto val = static_cast<int32_t *>(getLocal(instruction.params.index));
+                pushStack((void *) val, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::LoadGlobalU32: {
+                auto val = static_cast<int32_t *>(getGlobal(instruction.params.index));
+                pushStack((void *) val, sizeof(int32_t));
+            } break;
+            case Instruction::InstructionType::LoadU32: {
+                pushStack(((void *) &instruction.params.u32), sizeof(uint32_t));
+            } break;
         }
         callStack.back().currentInstruction++;
     }

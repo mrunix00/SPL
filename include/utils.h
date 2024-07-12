@@ -32,6 +32,11 @@
                                            : Instruction::InstructionType::OPERATION##GlobalI64;            \
                 instruction.params.index = id;                                                              \
                 break;                                                                                      \
+            case Variable::Type::U32:                                                                       \
+                instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalU32              \
+                                           : Instruction::InstructionType::OPERATION##GlobalU32;            \
+                instruction.params.index = id;                                                              \
+                break;                                                                                      \
             default:                                                                                        \
                 throw std::runtime_error("[Node::compile] Invalid variable type!");                         \
         }                                                                                                   \
@@ -40,28 +45,37 @@
 GENERATE_EMIT_FUNCTION(Load)
 GENERATE_EMIT_FUNCTION(Store)
 
-#define DECLARE_VAR_CASE(TYPE, PARAM)                                                      \
-    case TYPE: {                                                                           \
-        if (!value.has_value()) {                                                          \
-            segment.instructions.push_back({                                               \
-                    .type = Instruction::InstructionType::Load##TYPE,                      \
-                    .params = {.PARAM = 0},                                                \
-            });                                                                            \
-        } else if (((Node *) value.value())->token.type == Number) {                       \
-            segment.instructions.push_back({                                               \
-                    .type = Instruction::InstructionType::Load##TYPE,                      \
-                    .params = {.PARAM = std::stoi(((Node *) value.value())->token.value)}, \
-            });                                                                            \
-        } else {                                                                           \
-            ((Node *) value.value())->compile(program, segment);                           \
-        }                                                                                  \
-        segment.instructions.push_back({                                                   \
-                .type = segment.id == 0                                                    \
-                                ? Instruction::InstructionType::StoreGlobal##TYPE          \
-                                : Instruction::InstructionType::StoreLocal##TYPE,          \
-                .params = {.index = segment.locals.size()},                                \
-        });                                                                                \
-        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);            \
+template<typename T>
+inline T convert(const std::string &value) {
+    return static_cast<T>(std::stoll(value));
+}
+template<>
+inline uint32_t convert<uint32_t>(const std::string &value) {
+    return static_cast<uint32_t>(std::stoull(value));
+}
+
+#define DECLARE_VAR_CASE(TYPE, PARAM, CONVERT_TYPE)                                                    \
+    case TYPE: {                                                                                       \
+        if (!value.has_value()) {                                                                      \
+            segment.instructions.push_back({                                                           \
+                    .type = Instruction::InstructionType::Load##TYPE,                                  \
+                    .params = {.PARAM = 0},                                                            \
+            });                                                                                        \
+        } else if (((Node *) value.value())->token.type == Number) {                                   \
+            segment.instructions.push_back({                                                           \
+                    .type = Instruction::InstructionType::Load##TYPE,                                  \
+                    .params = {.PARAM = convert<CONVERT_TYPE>(((Node *) value.value())->token.value)}, \
+            });                                                                                        \
+        } else {                                                                                       \
+            ((Node *) value.value())->compile(program, segment);                                       \
+        }                                                                                              \
+        segment.instructions.push_back({                                                               \
+                .type = segment.id == 0                                                                \
+                                ? Instruction::InstructionType::StoreGlobal##TYPE                      \
+                                : Instruction::InstructionType::StoreLocal##TYPE,                      \
+                .params = {.index = segment.locals.size()},                                            \
+        });                                                                                            \
+        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);                        \
     } break;
 
 #define VAR_CASE(OP, TYPE)                                                                           \

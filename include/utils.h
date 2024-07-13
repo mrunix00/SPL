@@ -69,13 +69,13 @@ inline uint32_t convert<uint32_t>(const std::string &value) {
         } else {                                                                                       \
             ((Node *) value.value())->compile(program, segment);                                       \
         }                                                                                              \
+        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);                        \
         segment.instructions.push_back({                                                               \
                 .type = segment.id == 0                                                                \
                                 ? Instruction::InstructionType::StoreGlobal##TYPE                      \
                                 : Instruction::InstructionType::StoreLocal##TYPE,                      \
-                .params = {.index = segment.locals.size()},                                            \
+                .params = {.index = segment.find_local(identifier.token.value)},                       \
         });                                                                                            \
-        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);                        \
     } break;
 
 #define VAR_CASE(OP, TYPE)                                                                           \
@@ -104,3 +104,4 @@ Variable::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree
 Instruction getInstructionWithType(GenericInstruction instruction, Variable::Type type);
 Instruction emitLoad(Variable::Type, const Token &token);
 void typeCast(std::vector<Instruction> &instructions, Variable::Type from, Variable::Type to);
+size_t sizeOfType(Variable::Type type);

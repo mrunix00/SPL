@@ -90,12 +90,14 @@ struct Variable {
         Function
     } type;
     size_t index;
+    size_t size;
 };
 
 struct Segment {
     std::vector<Instruction> instructions;
     std::unordered_map<std::string, Variable> locals;
     std::unordered_map<std::string, size_t> functions;
+    size_t locals_capacity;
     size_t id{};
     size_t find_local(const std::string &identifier);
     void declare_variable(const std::string &name, Variable::Type type);
@@ -110,14 +112,14 @@ struct Program {
 };
 
 struct StackFrame {
-    void **locals{};
-    size_t number_of_locals{};
+    uint32_t *locals{};
+    size_t localsSize{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
 
 class VM {
-    void *stack;
+    uint32_t *stack;
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 
@@ -125,13 +127,20 @@ public:
     VM();
     void newStackFrame(const Segment &segment, size_t id);
     void popStackFrame();
-    void *getLocal(size_t index);
-    void setLocal(size_t index, void **value);
-    void *getGlobal(size_t index);
-    void setGlobal(size_t index, void **value);
-    void pushStack(void *value, size_t size);
-    void *popStack(size_t size);
-    void *topStack(size_t size);
+    uint32_t getLocal(size_t index);
+    void setLocal(size_t index, uint32_t value);
+    uint32_t getGlobal(size_t index);
+    void setGlobal(size_t index, uint32_t value);
+    uint64_t getDoubleLocal(size_t index);
+    void setDoubleLocal(size_t index, uint64_t value);
+    uint64_t getDoubleGlobal(size_t index);
+    void setDoubleGlobal(size_t index, uint64_t value);
+    void pushStack(uint32_t value);
+    void pushDoubleStack(uint64_t value);
+    uint32_t popStack();
+    uint64_t popDoubleStack();
+    uint32_t topStack();
+    [[maybe_unused]] [[maybe_unused]] uint64_t topDoubleStack();
 
     void run(const Program &program);
     size_t stackSize{};

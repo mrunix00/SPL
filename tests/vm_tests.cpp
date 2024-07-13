@@ -6,7 +6,7 @@ TEST(VM, SimpleAddition) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 3);
+    ASSERT_EQ(vm.topStack(), 3);
 }
 
 TEST(VM, SimpleSubtraction) {
@@ -14,7 +14,7 @@ TEST(VM, SimpleSubtraction) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 1);
+    ASSERT_EQ(vm.topStack(), 1);
 }
 
 TEST(VM, SimpleMultiplication) {
@@ -22,7 +22,7 @@ TEST(VM, SimpleMultiplication) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 6);
+    ASSERT_EQ(vm.topStack(), 6);
 }
 
 TEST(VM, SimpleDivision) {
@@ -30,7 +30,7 @@ TEST(VM, SimpleDivision) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 3);
+    ASSERT_EQ(vm.topStack(), 3);
 }
 
 TEST(VM, SimpleModulus) {
@@ -38,7 +38,7 @@ TEST(VM, SimpleModulus) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 2);
+    ASSERT_EQ(vm.topStack(), 2);
 }
 
 TEST(VM, CompoundExpression) {
@@ -46,7 +46,7 @@ TEST(VM, CompoundExpression) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 7);
+    ASSERT_EQ(vm.topStack(), 7);
 }
 
 TEST(VM, SimpleVariableDeclaration) {
@@ -55,7 +55,7 @@ TEST(VM, SimpleVariableDeclaration) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
+    ASSERT_EQ(vm.topStack(), 42);
 }
 
 TEST(VM, VariablesShouldBeInitializedWithZero) {
@@ -64,7 +64,7 @@ TEST(VM, VariablesShouldBeInitializedWithZero) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 0);
+    ASSERT_EQ(vm.topStack(), 0);
 }
 
 TEST(VM, TypeDeduction) {
@@ -73,7 +73,7 @@ TEST(VM, TypeDeduction) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
+    ASSERT_EQ(vm.topStack(), 42);
 }
 
 TEST(VM, SimpleI64VariableDeclaration) {
@@ -82,7 +82,7 @@ TEST(VM, SimpleI64VariableDeclaration) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int64_t *>(vm.topStack(sizeof(int64_t))), 42);
+    ASSERT_EQ(vm.topDoubleStack(), 42);
 }
 
 TEST(VM, BinaryExpressionWithMultipleTypes) {
@@ -92,7 +92,7 @@ TEST(VM, BinaryExpressionWithMultipleTypes) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int64_t *>(vm.topStack(sizeof(int64_t))), 84);
+    ASSERT_EQ(vm.topDoubleStack(), 84);
 }
 
 TEST(VM, SimpleVariableAssignment) {
@@ -100,7 +100,7 @@ TEST(VM, SimpleVariableAssignment) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
+    ASSERT_EQ(vm.topStack(), 43);
 }
 
 TEST(VM, RightIncrementUnaryOperator) {
@@ -110,7 +110,7 @@ TEST(VM, RightIncrementUnaryOperator) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
+    ASSERT_EQ(vm.topStack(), 43);
 }
 
 TEST(VM, RightIncrementUnaryOperatorI64) {
@@ -120,7 +120,7 @@ TEST(VM, RightIncrementUnaryOperatorI64) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int64_t ))), 43);
+    ASSERT_EQ(vm.topDoubleStack(), 43);
 }
 
 TEST(VM, RightDecrementUnaryOperator) {
@@ -130,7 +130,7 @@ TEST(VM, RightDecrementUnaryOperator) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 41);
+    ASSERT_EQ(vm.topStack(), 41);
 }
 
 TEST(VM, RightDecrementUnaryOperatorI64) {
@@ -140,7 +140,7 @@ TEST(VM, RightDecrementUnaryOperatorI64) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int64_t))), 41);
+    ASSERT_EQ(vm.topDoubleStack(), 41);
 }
 
 TEST(VM, LeftIncrementUnaryOperator) {
@@ -150,7 +150,7 @@ TEST(VM, LeftIncrementUnaryOperator) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
+    ASSERT_EQ(vm.topStack(), 43);
 }
 
 TEST(VM, LeftDecrementUnaryOperator) {
@@ -160,7 +160,7 @@ TEST(VM, LeftDecrementUnaryOperator) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 41);
+    ASSERT_EQ(vm.topStack(), 41);
 }
 
 TEST(VM, SimpleIfCondition) {
@@ -170,7 +170,7 @@ TEST(VM, SimpleIfCondition) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 42);
+    ASSERT_EQ(vm.topStack(), 42);
 }
 
 TEST(VM, SimpleIfElseCondition) {
@@ -180,7 +180,7 @@ TEST(VM, SimpleIfElseCondition) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 43);
+    ASSERT_EQ(vm.topStack(), 43);
 }
 
 TEST(VM, SimpleFunctionDeclaration) {
@@ -189,7 +189,7 @@ TEST(VM, SimpleFunctionDeclaration) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 3);
+    ASSERT_EQ(vm.topStack(), 3);
 }
 
 TEST(VM, FunctionWithDifferentReturnType) {
@@ -198,7 +198,7 @@ TEST(VM, FunctionWithDifferentReturnType) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int64_t *>(vm.topStack(sizeof(int64_t))), 30);
+    ASSERT_EQ(vm.topDoubleStack(), 30);
 }
 
 TEST(VM, RecursiveFunction) {
@@ -207,7 +207,7 @@ TEST(VM, RecursiveFunction) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 55);
+    ASSERT_EQ(vm.topStack(), 55);
 }
 
 TEST(VM, SimpleWhileLoop) {
@@ -217,7 +217,7 @@ TEST(VM, SimpleWhileLoop) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 10);
+    ASSERT_EQ(vm.topStack(), 10);
 }
 
 TEST(VM, SimpleForLoop) {
@@ -229,5 +229,5 @@ TEST(VM, SimpleForLoop) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(*static_cast<int32_t *>(vm.topStack(sizeof(int32_t))), 45);
+    ASSERT_EQ(vm.topStack(), 45);
 }

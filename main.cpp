@@ -16,9 +16,9 @@ int readFile(const char *filename) {
     compile(program, input.c_str());
     vm.run(program);
     if (vm.stackSize == sizeof(int32_t))
-        std::cout << *static_cast<int32_t *>(vm.topStack(sizeof(int32_t))) << std::endl;
+        std::cout << vm.topStack() << std::endl;
     else if (vm.stackSize == sizeof(int64_t))
-        std::cout << *static_cast<int64_t *>(vm.topStack(sizeof(int64_t))) << std::endl;
+        std::cout << vm.topStack() << std::endl;
     return EXIT_SUCCESS;
 }
 
@@ -39,7 +39,7 @@ int readFile(const char *filename) {
         }
         // TODO: Add handling for other types
         if (vm.stackSize != 0)
-            std::cout << *static_cast<int32_t *>(vm.topStack(sizeof(int32_t))) << std::endl;
+            std::cout << vm.topStack() << std::endl;
     }
 }
 

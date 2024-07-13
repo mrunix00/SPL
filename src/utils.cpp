@@ -104,6 +104,12 @@ Variable::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree
                 throw std::runtime_error("Function not found: " + call->identifier.token.value);
             return Variable::Type::I32;
         }
+        case AbstractSyntaxTree::Type::Declaration: {
+            auto declaration = dynamic_cast<Declaration *>(ast);
+            if (declaration->type.has_value())
+                return varTypeConvert(declaration->type.value());
+            return deduceType(program, segment, declaration->value.value());
+        }
         default:
             throw std::runtime_error("Invalid type: " + ast->typeStr);
     }
@@ -182,5 +188,17 @@ void typeCast(std::vector<Instruction> &instructions, Variable::Type from, Varia
             }
         default:
             throw std::runtime_error("Invalid type cast");
+    }
+}
+
+size_t sizeOfType(Variable::Type type) {
+    switch (type) {
+        case Variable::Type::I32:
+        case Variable::Type::U32:
+            return 1;
+        case Variable::Type::I64:
+            return 2;
+        default:
+            throw std::runtime_error("Invalid type");
     }
 }

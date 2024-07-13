@@ -1,4 +1,5 @@
 #include "vm.h"
+#include "utils.h"
 #include <cstring>
 #include <stdexcept>
 
@@ -23,7 +24,11 @@ size_t Program::find_function(const Segment &segment, const std::string &identif
 }
 
 void Segment::declare_variable(const std::string &name, Variable::Type type) {
-    locals[name] = Variable{name, type, locals.size()};
+    locals[name] = Variable{name, type, locals_capacity};
+    if (type != Variable::Type::Function) {
+        locals[name].size = sizeOfType(type);
+        locals_capacity += sizeOfType(type);
+    }
 }
 size_t Segment::find_local(const std::string &identifier) {
     auto it = locals.find(identifier);
@@ -37,59 +42,93 @@ void Segment::declare_function(const std::string &name, size_t index) {
 
 VM::VM() {
     stackCapacity = 1024;
-    stack = malloc(stackCapacity);
+    stack = (uint32_t *) malloc(stackCapacity);
+    if (stack == nullptr)
+        throw std::runtime_error("Memory allocation failure!");
     callStack.push_back(StackFrame{});
 }
 inline void VM::newStackFrame(const Segment &segment, size_t id) {
     StackFrame frame;
     frame.segmentIndex = id;
-    frame.number_of_locals = segment.locals.size();
-    frame.locals = (void **) malloc(frame.number_of_locals * sizeof(void *));
+    frame.localsSize = segment.locals_capacity;
+    frame.locals = (uint32_t *) malloc(frame.localsSize);
+    if (frame.locals == nullptr) {
+        throw std::runtime_error("Memory allocation failure!");
+    }
     callStack.push_back(frame);
-    for (auto &[name, variable]: segment.locals) {
-        auto val = popStack(sizeof(int32_t));
-        setLocal(variable.index, &val);
+    for (size_t i = segment.locals_capacity - 1; i != -1; i--) {
+        auto val = popStack();
+        setLocal(i, val);
     }
 }
 inline void VM::popStackFrame() {
-    for (size_t i = 0; i < callStack.back().number_of_locals; i++)
-        free(callStack.back().locals[i]);
     free(callStack.back().locals);
     callStack.pop_back();
 }
-inline void *VM::getLocal(const size_t index) {
+inline uint32_t VM::getLocal(const size_t index) {
     return callStack.back().locals[index];
 }
-inline void VM::setLocal(const size_t index, void **value) {
-    callStack.back().locals[index] = *value;
+inline void VM::setLocal(const size_t index, uint32_t value) {
+    callStack.back().locals[index] = value;
 }
-inline void *VM::getGlobal(size_t index) {
+inline uint32_t VM::getGlobal(size_t index) {
     return callStack[0].locals[index];
 }
-inline void VM::setGlobal(const size_t index, void **value) {
-    callStack[0].locals[index] = *value;
+inline void VM::setGlobal(const size_t index, uint32_t value) {
+    callStack.front().locals[index] = value;
 }
-inline void VM::pushStack(void *value, size_t size) {
-    if (stackSize + size > stackCapacity) {
+inline uint64_t VM::getDoubleLocal(const size_t index) {
+    return (static_cast<uint64_t>(getLocal(index)) << 32) | (static_cast<uint32_t>(getLocal(index + 1)) & 0xFFFFFFFF);
+}
+inline void VM::setDoubleLocal(const size_t index, uint64_t value) {
+    setLocal(index, value >> 32);
+    setLocal(index + 1, value & 0xFFFFFFFF);
+}
+inline uint64_t VM::getDoubleGlobal(size_t index) {
+    return (uint64_t) getGlobal(index) << 32 | getGlobal(index + 1);
+}
+inline void VM::setDoubleGlobal(const size_t index, uint64_t value) {
+    callStack.front().locals[index] = value >> 32;
+    callStack.front().locals[index + 1] = value & 0xFFFFFFFF;
+}
+inline void VM::pushStack(uint32_t value) {
+    if (stackSize + 1 > stackCapacity) {
         stackCapacity *= 2;
-        stack = realloc(stack, stackCapacity);
+        stack = (uint32_t *) realloc(stack, stackCapacity);
+        if (stack == nullptr) {
+            throw std::runtime_error("Memory allocation failure!");
+        }
     }
-    memcpy(static_cast<char *>(stack) + stackSize, value, size);
-    stackSize += size;
+    stack[stackSize++] = value;
 }
-inline void *VM::popStack(size_t size) {
-    void *value = malloc(size);
-    stackSize -= size;
-    memcpy(value, static_cast<char *>(stack) + stackSize, size);
-    return value;
+inline void VM::pushDoubleStack(uint64_t value) {
+    if (stackSize + 2 > stackCapacity) {
+        stackCapacity *= 2;
+        stack = (uint32_t *) realloc(stack, stackCapacity);
+    }
+    pushStack(value >> 32);
+    pushStack(value & 0xFFFFFFFF);
 }
-void *VM::topStack(size_t size) {
-    return static_cast<char *>(stack) + stackSize - size;
+inline uint32_t VM::popStack() {
+    return stack[--stackSize];
+}
+inline uint64_t VM::popDoubleStack() {
+    auto low = popStack();
+    auto high = popStack();
+    return (static_cast<uint64_t>(high) << 32) | (static_cast<uint32_t>(low) & 0xFFFFFFFF);
+}
+uint32_t VM::topStack() {
+    return stack[stackSize - 1];
+}
+[[maybe_unused]] uint64_t VM::topDoubleStack() {
+    auto low = stack[stackSize - 1];
+    auto high = stack[stackSize - 2];
+    return (static_cast<uint64_t>(high) << 32) | (static_cast<uint32_t>(low) & 0xFFFFFFFF);
 }
 
 void VM::run(const Program &program) {
-    if (callStack.front().number_of_locals != program.segments.front().locals.size()) {
-        void **newPtr = (void **) realloc(callStack.front().locals, program.segments.front().locals.size() * sizeof(void *));
+    if (callStack.front().localsSize != program.segments.front().locals_capacity) {
+        auto *newPtr = (uint32_t *) realloc(callStack.front().locals, program.segments.front().locals.size());
         if (newPtr == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         } else {
@@ -106,91 +145,73 @@ void VM::run(const Program &program) {
             case Instruction::InstructionType::Invalid:
                 throw std::runtime_error("[VM::run] Invalid instruction!");
             case Instruction::InstructionType::AddI32: {
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto result = *a + *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto a = popStack();
+                auto b = popStack();
+                pushStack(a + b);
             } break;
             case Instruction::InstructionType::SubI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto result = *a - *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a - b);
             } break;
             case Instruction::InstructionType::MulI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto result = (*a) * (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a * b);
             } break;
             case Instruction::InstructionType::DivI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto result = *a / *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a / b);
             } break;
             case Instruction::InstructionType::ModI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto result = *a % *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a % b);
             } break;
             case Instruction::InstructionType::GreaterI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                int32_t result = (*a) > (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a > b);
             } break;
             case Instruction::InstructionType::LessI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                int32_t result = (*a) < (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a < b);
             } break;
+            case Instruction::IncrementU32:
             case Instruction::InstructionType::IncrementI32: {
-                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto newVal = *val + 1;
-                free(val);
-                pushStack(&newVal, sizeof(int32_t));
+                auto val = popStack();
+                pushStack(val + 1);
             } break;
+            case Instruction::DecrementU32:
             case Instruction::InstructionType::DecrementI32: {
-                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto newVal = *val - 1;
-                free(val);
-                pushStack(&newVal, sizeof(int32_t));
+                auto val = popStack();
+                pushStack(val - 1);
             } break;
+            case Instruction::InstructionType::LoadU32:
             case Instruction::InstructionType::LoadI32: {
-                pushStack(((void *) &instruction.params.i32), sizeof(int32_t));
+                pushStack(instruction.params.i32);
             } break;
+            case Instruction::InstructionType::StoreGlobalU32:
             case Instruction::InstructionType::StoreGlobalI32: {
-                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                setGlobal(instruction.params.index, (void **) &val);
+                auto val = popStack();
+                setGlobal(instruction.params.index, val);
             } break;
+            case Instruction::InstructionType::LoadGlobalU32:
             case Instruction::InstructionType::LoadGlobalI32: {
-                auto val = static_cast<int32_t *>(getGlobal(instruction.params.index));
-                pushStack((void *) val, sizeof(int32_t));
+                auto val = getGlobal(instruction.params.index);
+                pushStack(val);
             } break;
+            case Instruction::InstructionType::StoreLocalU32:
             case Instruction::InstructionType::StoreLocalI32: {
-                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                setLocal(instruction.params.index, (void **) &val);
+                auto val = popStack();
+                setLocal(instruction.params.index, val);
             } break;
+            case Instruction::InstructionType::LoadLocalU32:
             case Instruction::InstructionType::LoadLocalI32: {
-                auto val = static_cast<int32_t *>(getLocal(instruction.params.index));
-                pushStack((void *) val, sizeof(int32_t));
+                auto val = getLocal(instruction.params.index);
+                pushStack(val);
             } break;
             case Instruction::InstructionType::Return:
                 popStackFrame();
@@ -200,198 +221,120 @@ void VM::run(const Program &program) {
                 newStackFrame(program.segments[instruction.params.index], instruction.params.index);
                 continue;
             case Instruction::InstructionType::JumpIfFalse: {
-                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                if (*val == 0) {
+                auto cond = popStack();
+                if (cond == 0) {
                     callStack.back().currentInstruction = instruction.params.index;
-                    free(val);
                     continue;
                 }
-                free(val);
             } break;
             case Instruction::InstructionType::Jump:
                 callStack.back().currentInstruction = instruction.params.index;
                 continue;
             case Instruction::AddI64: {
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto result = *a + *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int64_t));
+                auto a = popDoubleStack();
+                auto b = popDoubleStack();
+                pushDoubleStack(a + b);
             } break;
             case Instruction::SubI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto result = *a - *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int64_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushDoubleStack(a - b);
             } break;
             case Instruction::MulI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto result = *a * *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int64_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushDoubleStack(a * b);
             } break;
             case Instruction::DivI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto result = *a / *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int64_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushDoubleStack(a / b);
             } break;
             case Instruction::ModI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto result = *a % *b;
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int64_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushDoubleStack(a % b);
             } break;
             case Instruction::GreaterI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                int32_t result = (*a) > (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushStack(a > b);
             } break;
             case Instruction::LessI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                int32_t result = (*a) < (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushStack(a < b);
             } break;
             case Instruction::GreaterEqualI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                int32_t result = (*a) >= (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a >= b);
             } break;
             case Instruction::GreaterEqualI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                int32_t result = (*a) >= (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushStack(a >= b);
             } break;
             case Instruction::LessEqualI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                int32_t result = (*a) <= (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a <= b);
             } break;
             case Instruction::LessEqualI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                int32_t result = (*a) <= (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushStack(a <= b);
             } break;
             case Instruction::EqualI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                int32_t result = (*a) == (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a == b);
             } break;
             case Instruction::EqualI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                int32_t result = (*a) == (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushStack(a == b);
             } break;
             case Instruction::NotEqualI32: {
-                auto b = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                auto a = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                int32_t result = (*a) != (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popStack();
+                auto a = popStack();
+                pushStack(a != b);
             } break;
             case Instruction::NotEqualI64: {
-                auto b = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto a = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                int32_t result = (*a) != (*b);
-                free(a);
-                free(b);
-                pushStack(&result, sizeof(int32_t));
+                auto b = popDoubleStack();
+                auto a = popDoubleStack();
+                pushStack(a != b);
             } break;
             case Instruction::IncrementI64: {
-                auto val = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto newVal = *val + 1;
-                free(val);
-                pushStack(&newVal, sizeof(int64_t));
+                pushDoubleStack(popDoubleStack() + 1);
             } break;
             case Instruction::DecrementI64: {
-                auto val = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                auto newVal = *val - 1;
-                free(val);
-                pushStack(&newVal, sizeof(int64_t));
+                auto val = popDoubleStack();
+                pushDoubleStack(val - 1);
             } break;
             case Instruction::StoreGlobalI64: {
-                auto val = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                setGlobal(instruction.params.index, (void **) &val);
+                auto val = popDoubleStack();
+                setDoubleGlobal(instruction.params.index, val);
             } break;
             case Instruction::StoreLocalI64: {
-                auto val = static_cast<int64_t *>(popStack(sizeof(int64_t)));
-                setLocal(instruction.params.index, (void **) &val);
+                auto val = popDoubleStack();
+                setDoubleLocal(instruction.params.index, val);
             } break;
             case Instruction::LoadI64: {
-                pushStack(((void *) &instruction.params.i64), sizeof(int64_t));
+                pushDoubleStack(instruction.params.i64);
             } break;
             case Instruction::LoadGlobalI64: {
-                auto val = static_cast<int64_t *>(getGlobal(instruction.params.index));
-                pushStack((void *) val, sizeof(int64_t));
+                auto val = getDoubleGlobal(instruction.params.index);
+                pushDoubleStack(val);
             } break;
             case Instruction::LoadLocalI64: {
-                auto val = static_cast<int64_t *>(getLocal(instruction.params.index));
-                pushStack((void *) val, sizeof(int64_t));
+                auto val = getDoubleLocal(instruction.params.index);
+                pushDoubleStack(val);
             } break;
-            case Instruction::ConvertI32toI64: {
-                auto val = static_cast<int32_t *>(popStack(sizeof(int32_t)));
-                int64_t newVal = *val;
-                free(val);
-                pushStack(&newVal, sizeof(int64_t));
-            } break;
+            case Instruction::ConvertI32toI64:
             case Instruction::ConvertU32toI64: {
-                auto val = static_cast<uint32_t *>(popStack(sizeof(uint32_t)));
-                int64_t newVal = *val;
-                free(val);
-                pushStack(&newVal, sizeof(int64_t));
-            } break;
-            case Instruction::InstructionType::StoreGlobalU32: {
-                auto val = static_cast<uint32_t *>(popStack(sizeof(uint32_t)));
-                setGlobal(instruction.params.index, (void **) &val);
-            } break;
-            case Instruction::InstructionType::StoreLocalU32: {
-                auto val = static_cast<uint32_t *>(popStack(sizeof(uint32_t)));
-                setLocal(instruction.params.index, (void **) &val);
-            } break;
-            case Instruction::InstructionType::LoadLocalU32: {
-                auto val = static_cast<int32_t *>(getLocal(instruction.params.index));
-                pushStack((void *) val, sizeof(int32_t));
-            } break;
-            case Instruction::InstructionType::LoadGlobalU32: {
-                auto val = static_cast<int32_t *>(getGlobal(instruction.params.index));
-                pushStack((void *) val, sizeof(int32_t));
-            } break;
-            case Instruction::InstructionType::LoadU32: {
-                pushStack(((void *) &instruction.params.u32), sizeof(uint32_t));
+                auto val = popStack();
+                pushDoubleStack(val);
             } break;
         }
         callStack.back().currentInstruction++;

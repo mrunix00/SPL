@@ -145,9 +145,11 @@ void Declaration::compile(Program &program, Segment &segment) const {
             for (auto argument: functionDeclaration->arguments) {
                 newSegment.locals[argument->identifier.token.value] = {
                         .name = argument->identifier.token.value,
-                        .type = varTypeConvert(functionDeclaration->returnType),
+                        .type = deduceType(program, segment, argument),
                         .index = newSegment.locals.size(),
+                        .size = sizeOfType(varTypeConvert(functionDeclaration->returnType))
                 };
+                newSegment.locals_capacity += sizeOfType(deduceType(program, segment, argument));
             }
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);

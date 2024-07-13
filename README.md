@@ -1,5 +1,29 @@
 # SPL
-Another programming language (WIP).
+Simple programming language (WIP).
+
+## Build instructions
+
+### Prerequisite
+You need to have the following installed on your system:
+- CMake 3.25+.
+- A C++ Compiler.
+- Git
+- Flex
+- Bison
+
+### Cloning the repo
+```console
+git clone https://github.com/mrunix00/SPL.git
+cd SPL/
+git submodule update --init
+```
+
+### Build
+```console
+mkdir build && cd build
+cmake .. && cmake --build .
+./SPL
+```
 
 ## Syntax
 ### Variable declaration

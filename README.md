@@ -1,6 +1,8 @@
 # SPL
 Simple programming language (WIP).
 
+<img src="assets/logo.svg" width=50%>
+
 ## Build instructions
 
 ### Prerequisite

@@ -60,25 +60,3 @@ for define i = 0; i < 20; i++ {
     // do something
 };
 ```
-
-## Roadmap
-- [x] Lexer
-- [x] Parser
-- [x] REPL shell
-- [x] Variables
-- [x] Functions
-- [x] Conditions
-- [x] While loops
-- [x] For loops
-- [ ] Arrays
-- [ ] Strings
-- [ ] Hashmaps
-- [ ] Error handling
-- [ ] Structs
-- [ ] I/O operations
-- [x] Bytecode VM
-- [ ] Tail call optimization
-- [ ] Garbage collector
-- [ ] Importing libraries
-- [ ] Standard library
-- [ ] JIT compiler

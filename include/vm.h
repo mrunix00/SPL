@@ -4,6 +4,7 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 struct Instruction {
@@ -80,35 +81,50 @@ struct Instruction {
     } params{};
 };
 
-struct Variable {
-    std::string name;
-    enum class Type {
+struct VariableType {
+    enum Type {
         Invalid = 0,
         I32,
         I64,
         U32,
         Function
     } type;
-    size_t index;
-    size_t size;
+    explicit VariableType(Type type) : type(type){};
+};
+
+struct FunctionType : public VariableType {
+    VariableType *returnType;
+    std::vector<VariableType *> arguments;
+    FunctionType(VariableType *returnType, std::vector<VariableType *> arguments)
+        : VariableType(Function), returnType(returnType), arguments(std::move(arguments)){};
+};
+
+struct Variable {
+    std::string name;
+    VariableType *type{};
+    size_t index{};
+    size_t size{};
+    Variable() = default;
+    Variable(std::string name, VariableType *type, size_t index, size_t size)
+        : name(std::move(name)), type(type), index(index), size(size){};
 };
 
 struct Segment {
     std::vector<Instruction> instructions;
     std::unordered_map<std::string, Variable> locals;
-    std::unordered_map<std::string, size_t> functions;
+    std::unordered_map<std::string, Variable> functions;
     size_t locals_capacity;
     size_t id{};
     size_t find_local(const std::string &identifier);
-    void declare_variable(const std::string &name, Variable::Type type);
-    void declare_function(const std::string &name, size_t index);
+    void declare_variable(const std::string &name, VariableType *varType);
+    void declare_function(const std::string &name, VariableType *funcType, size_t index);
 };
 
 struct Program {
     std::vector<Segment> segments;
     Program();
     size_t find_global(const std::string &identifier);
-    size_t find_function(const Segment &segment, const std::string &identifier);
+    Variable find_function(const Segment &segment, const std::string &identifier);
 };
 
 struct StackFrame {

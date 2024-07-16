@@ -5,47 +5,47 @@ void assert(bool condition, const char *message) {
         throw std::runtime_error("Assertion failed: " + std::string(message));
 }
 
-Variable::Type varTypeConvert(AbstractSyntaxTree *ast) {
+VariableType::Type varTypeConvert(AbstractSyntaxTree *ast) {
     if (ast->nodeType != AbstractSyntaxTree::Type::Node)
         throw std::runtime_error("[Declaration::compile] Invalid type: " + ast->typeStr);
     auto token = dynamic_cast<Node *>(ast)->token;
-    static std::unordered_map<int, Variable::Type> types = {
-            {I32, Variable::Type::I32},
-            {I64, Variable::Type::I64},
-            {U32, Variable::Type::U32},
+    static std::unordered_map<int, VariableType::Type> types = {
+            {I32, VariableType::I32},
+            {I64, VariableType::I64},
+            {U32, VariableType::U32},
     };
     if (types.find(token.type) == types.end())
         throw std::runtime_error("[Declaration::compile] Invalid type: " + token.value);
     return types.at(token.type);
 }
 
-Variable::Type biggestType(Variable::Type first, Variable::Type second) {
+VariableType::Type biggestType(VariableType::Type first, VariableType::Type second) {
     switch (first) {
-        case Variable::Type::I32:
+        case VariableType::I32:
             switch (second) {
-                case Variable::Type::I32:
+                case VariableType::I32:
                     return first;
-                case Variable::Type::U32:
-                case Variable::Type::I64:
+                case VariableType::U32:
+                case VariableType::I64:
                     return second;
                 default:
                     throw std::runtime_error("This should not be accessed!");
             }
-        case Variable::Type::I64:
+        case VariableType::I64:
             switch (second) {
-                case Variable::Type::I32:
-                case Variable::Type::U32:
-                case Variable::Type::I64:
+                case VariableType::I32:
+                case VariableType::U32:
+                case VariableType::I64:
                     return first;
                 default:
                     throw std::runtime_error("Type mismatch!");
             }
-        case Variable::Type::U32:
+        case VariableType::U32:
             switch (second) {
-                case Variable::Type::I32:
-                case Variable::Type::U32:
+                case VariableType::I32:
+                case VariableType::U32:
                     return first;
-                case Variable::Type::I64:
+                case VariableType::I64:
                     return second;
                 default:
                     throw std::runtime_error("Type mismatch!");
@@ -55,7 +55,7 @@ Variable::Type biggestType(Variable::Type first, Variable::Type second) {
     }
 }
 
-Variable::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast) {
+VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast) {
     switch (ast->nodeType) {
         case AbstractSyntaxTree::Type::Node: {
             auto token = dynamic_cast<Node *>(ast)->token;
@@ -63,23 +63,23 @@ Variable::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree
                 case Number: {
                     try {
                         std::stoi(token.value);
-                        return Variable::Type::I32;
+                        return VariableType::I32;
                     } catch (std::out_of_range &) {
                         goto long64;
                     }
                 long64:
                     try {
                         std::stol(token.value);
-                        return Variable::Type::I64;
+                        return VariableType::I64;
                     } catch (std::exception &) {
                         throw std::runtime_error("Invalid number: " + token.value);
                     }
                 }
                 case Identifier: {
                     if (segment.find_local(token.value) != -1)
-                        return segment.locals[token.value].type;
+                        return segment.locals[token.value].type->type;
                     if (program.find_global(token.value) != -1)
-                        return program.segments[0].locals[token.value].type;
+                        return program.segments[0].locals[token.value].type->type;
                     throw std::runtime_error("Identifier not found: " + token.value);
                 }
                 default:
@@ -97,12 +97,9 @@ Variable::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree
             return biggestType(left, right);
         }
         case AbstractSyntaxTree::Type::FunctionCall: {
-            // TODO: add support for other return types
             auto call = dynamic_cast<FunctionCall *>(ast);
             auto function = program.find_function(segment, call->identifier.token.value);
-            if (function == -1)
-                throw std::runtime_error("Function not found: " + call->identifier.token.value);
-            return Variable::Type::I32;
+            return ((FunctionType*) function.type)->returnType->type;
         }
         case AbstractSyntaxTree::Type::Declaration: {
             auto declaration = dynamic_cast<Declaration *>(ast);
@@ -118,15 +115,15 @@ Variable::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree
 #define TYPE_CASE(INS)                                                             \
     case GenericInstruction::INS: {                                                \
         switch (type) {                                                            \
-            case Variable::Type::I32:                                              \
+            case VariableType::I32:                                                \
                 return {Instruction::InstructionType::INS##I32};                   \
-            case Variable::Type::I64:                                              \
+            case VariableType::I64:                                                \
                 return {Instruction::InstructionType::INS##I64};                   \
             default:                                                               \
                 throw std::runtime_error("[getInstructionWithType] Invalid type"); \
         }                                                                          \
     }
-Instruction getInstructionWithType(GenericInstruction instruction, Variable::Type type) {
+Instruction getInstructionWithType(GenericInstruction instruction, VariableType::Type type) {
     switch (instruction) {
         TYPE_CASE(Add)
         TYPE_CASE(Sub)
@@ -142,19 +139,19 @@ Instruction getInstructionWithType(GenericInstruction instruction, Variable::Typ
     }
 }
 
-Instruction emitLoad(Variable::Type type, const Token &token) {
+Instruction emitLoad(VariableType::Type type, const Token &token) {
     switch (type) {
-        case Variable::Type::I32:
+        case VariableType::I32:
             return Instruction{
                     .type = Instruction::InstructionType::LoadI32,
                     .params = {.i32 = std::stoi(token.value)},
             };
-        case Variable::Type::U32:
+        case VariableType::U32:
             return Instruction{
                     .type = Instruction::InstructionType::LoadU32,
                     .params = {.u32 = (uint32_t) std::stoul(token.value)},
             };
-        case Variable::Type::I64:
+        case VariableType::I64:
             return Instruction{
                     .type = Instruction::InstructionType::LoadI64,
                     .params = {.i64 = std::stol(token.value)},
@@ -164,24 +161,24 @@ Instruction emitLoad(Variable::Type type, const Token &token) {
     }
 }
 
-void typeCast(std::vector<Instruction> &instructions, Variable::Type from, Variable::Type to) {
+void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, VariableType::Type to) {
     if (from == to)
         return;
     switch (from) {
-        case Variable::Type::I32:
+        case VariableType::I32:
             switch (to) {
-                case Variable::Type::U32:
+                case VariableType::U32:
                     return;
-                case Variable::Type::I64:
+                case VariableType::I64:
                     return instructions.push_back({.type = Instruction::InstructionType::ConvertI32toI64});
                 default:
                     throw std::runtime_error("Invalid type cast");
             }
-        case Variable::Type::U32:
+        case VariableType::U32:
             switch (to) {
-                case Variable::Type::I32:
+                case VariableType::I32:
                     return;
-                case Variable::Type::I64:
+                case VariableType::I64:
                     return instructions.push_back({.type = Instruction::InstructionType::ConvertU32toI64});
                 default:
                     throw std::runtime_error("Invalid type cast");
@@ -191,12 +188,12 @@ void typeCast(std::vector<Instruction> &instructions, Variable::Type from, Varia
     }
 }
 
-size_t sizeOfType(Variable::Type type) {
+size_t sizeOfType(VariableType::Type type) {
     switch (type) {
-        case Variable::Type::I32:
-        case Variable::Type::U32:
+        case VariableType::I32:
+        case VariableType::U32:
             return 1;
-        case Variable::Type::I64:
+        case VariableType::I64:
             return 2;
         default:
             throw std::runtime_error("Invalid type");

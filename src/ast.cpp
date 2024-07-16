@@ -120,7 +120,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
         if (value.has_value()) {
             auto varType = deduceType(program, segment, value.value());
             value.value()->compile(program, segment);
-            segment.declare_variable(identifier.token.value, varType);
+            segment.declare_variable(identifier.token.value, new VariableType(varType));
             emitStore(program, segment, identifier.token.value);
         } else {
             throw std::runtime_error("[Declaration::compile] Cannot deduce the variable type!");
@@ -140,15 +140,19 @@ void Declaration::compile(Program &program, Segment &segment) const {
         case AbstractSyntaxTree::Type::FunctionDeclaration: {
             auto functionDeclaration = (FunctionDeclaration *) type.value();
             auto newSegment = Segment{.id = program.segments.size()};
-            segment.declare_function(identifier.token.value, program.segments.size());
-            segment.declare_variable(identifier.token.value, Variable::Type::Function);
+            auto returnType = new VariableType(varTypeConvert(functionDeclaration->returnType));
+            auto arguments = std::vector<VariableType *>();
+            for (auto arg: functionDeclaration->arguments)
+                arguments.push_back(new VariableType(varTypeConvert(arg->type.value())));
+            segment.declare_function(identifier.token.value,
+                                     new FunctionType(returnType, arguments),
+                                     program.segments.size());
             for (auto argument: functionDeclaration->arguments) {
-                newSegment.locals[argument->identifier.token.value] = {
-                        .name = argument->identifier.token.value,
-                        .type = deduceType(program, segment, argument),
-                        .index = newSegment.locals.size(),
-                        .size = sizeOfType(varTypeConvert(functionDeclaration->returnType))
-                };
+                newSegment.locals[argument->identifier.token.value] = Variable(
+                        argument->identifier.token.value,
+                        new VariableType(deduceType(program, segment, argument)),
+                        newSegment.locals.size(),
+                        sizeOfType(varTypeConvert(functionDeclaration->returnType)));
                 newSegment.locals_capacity += sizeOfType(deduceType(program, segment, argument));
             }
             value.value()->compile(program, newSegment);
@@ -253,14 +257,20 @@ bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
     return identifier == otherFunctionCall.identifier;
 }
 void FunctionCall::compile(Program &program, Segment &segment) const {
-    for (auto &argument: arguments) {
+    auto function = program.find_function(segment, identifier.token.value);
+    auto functionType = (FunctionType *) function.type;
+    for (int i = 0; i < arguments.size(); i++) {
+        auto argument = arguments[i];
+        auto definedArgument = functionType->arguments[i];
+        if (deduceType(program, segment, argument) != definedArgument->type)
+            throw std::runtime_error("[FunctionCall::compile] Argument type mismatch!");
         argument->compile(program, segment);
     }
 
     segment.instructions.push_back(
             Instruction{
                     .type = Instruction::InstructionType::Call,
-                    .params = {.index = program.find_function(segment, identifier.token.value)},
+                    .params = {.index = function.index},
             });
 }
 
@@ -344,7 +354,7 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
     if (node->token.type != Identifier)
         throw std::runtime_error("[UnaryExpression::compile] Invalid expression varType!");
 
-    Variable::Type varType;
+    VariableType *varType;
     if (segment.find_local(node->token.value) != -1) {
         varType = segment.locals[node->token.value].type;
     } else if (program.find_global(node->token.value) != -1) {
@@ -356,7 +366,7 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
     emitLoad(program, segment, node->token.value);
     switch (op.type) {
         case Increment:
-            switch (varType) {
+            switch (varType->type) {
                 VAR_CASE(Increment, U32)
                 VAR_CASE(Increment, I32)
                 VAR_CASE(Increment, I64)
@@ -365,7 +375,7 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
             }
             break;
         case Decrement:
-            switch (varType) {
+            switch (varType->type) {
                 VAR_CASE(Decrement, U32)
                 VAR_CASE(Decrement, I32)
                 VAR_CASE(Decrement, I64)

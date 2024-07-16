@@ -13,21 +13,21 @@ size_t Program::find_global(const std::string &identifier) {
         return -1;
     return it->second.index;
 }
-size_t Program::find_function(const Segment &segment, const std::string &identifier) {
+Variable Program::find_function(const Segment &segment, const std::string &identifier) {
     auto it = segment.functions.find(identifier);
     if (it == segment.functions.end()) {
         it = segments.front().functions.find(identifier);
         if (it == segments.front().functions.end())
-            return -1;
+            throw std::runtime_error("[Program::find_function] Function not found: " + identifier);
     }
     return it->second;
 }
 
-void Segment::declare_variable(const std::string &name, Variable::Type type) {
-    locals[name] = Variable{name, type, locals_capacity};
-    if (type != Variable::Type::Function) {
-        locals[name].size = sizeOfType(type);
-        locals_capacity += sizeOfType(type);
+void Segment::declare_variable(const std::string &name, VariableType *varType) {
+    locals[name] = Variable(name, varType, locals_capacity, 0);
+    if (varType->type != VariableType::Type::Function) {
+        locals[name].size = sizeOfType(varType->type);
+        locals_capacity += sizeOfType(varType->type);
     }
 }
 size_t Segment::find_local(const std::string &identifier) {
@@ -36,8 +36,10 @@ size_t Segment::find_local(const std::string &identifier) {
         return -1;
     return it->second.index;
 }
-void Segment::declare_function(const std::string &name, size_t index) {
-    functions[name] = index;
+void Segment::declare_function(const std::string &name, VariableType *funcType, size_t index) {
+    auto function = Variable(name, funcType, index, 0);
+    functions[name] = function;
+    locals[name] = function;
 }
 
 VM::VM() {

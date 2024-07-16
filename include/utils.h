@@ -9,7 +9,7 @@
         size_t id;                                                                                          \
         bool isLocal;                                                                                       \
         Instruction instruction;                                                                            \
-        Variable::Type type;                                                                                \
+        VariableType *type;                                                                                 \
         if (segment.find_local(identifier) != -1) {                                                         \
             isLocal = true;                                                                                 \
             id = segment.find_local(identifier);                                                            \
@@ -21,18 +21,18 @@
         } else {                                                                                            \
             throw std::runtime_error("[Node::compile] Identifier not found: " + identifier);                \
         }                                                                                                   \
-        switch (type) {                                                                                     \
-            case Variable::Type::I32:                                                                       \
+        switch (type->type) {                                                                               \
+            case VariableType::Type::I32:                                                                   \
                 instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalI32              \
                                            : Instruction::InstructionType::OPERATION##GlobalI32;            \
                 instruction.params.index = id;                                                              \
                 break;                                                                                      \
-            case Variable::Type::I64:                                                                       \
+            case VariableType::Type::I64:                                                                   \
                 instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalI64              \
                                            : Instruction::InstructionType::OPERATION##GlobalI64;            \
                 instruction.params.index = id;                                                              \
                 break;                                                                                      \
-            case Variable::Type::U32:                                                                       \
+            case VariableType::Type::U32:                                                                   \
                 instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalU32              \
                                            : Instruction::InstructionType::OPERATION##GlobalU32;            \
                 instruction.params.index = id;                                                              \
@@ -69,7 +69,7 @@ inline uint32_t convert<uint32_t>(const std::string &value) {
         } else {                                                                                       \
             ((Node *) value.value())->compile(program, segment);                                       \
         }                                                                                              \
-        segment.declare_variable(identifier.token.value, Variable::Type::TYPE);                        \
+        segment.declare_variable(identifier.token.value, new VariableType(VariableType::Type::TYPE));  \
         segment.instructions.push_back({                                                               \
                 .type = segment.id == 0                                                                \
                                 ? Instruction::InstructionType::StoreGlobal##TYPE                      \
@@ -79,7 +79,7 @@ inline uint32_t convert<uint32_t>(const std::string &value) {
     } break;
 
 #define VAR_CASE(OP, TYPE)                                                                           \
-    case Variable::Type::TYPE:                                                                       \
+    case VariableType::Type::TYPE:                                                                   \
         segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::OP##TYPE}); \
         break;
 
@@ -99,9 +99,9 @@ enum class GenericInstruction {
 };
 
 void assert(bool condition, const char *message);
-Variable::Type varTypeConvert(AbstractSyntaxTree *ast);
-Variable::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast);
-Instruction getInstructionWithType(GenericInstruction instruction, Variable::Type type);
-Instruction emitLoad(Variable::Type, const Token &token);
-void typeCast(std::vector<Instruction> &instructions, Variable::Type from, Variable::Type to);
-size_t sizeOfType(Variable::Type type);
+VariableType::Type varTypeConvert(AbstractSyntaxTree *ast);
+VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast);
+Instruction getInstructionWithType(GenericInstruction instruction, VariableType::Type type);
+Instruction emitLoad(VariableType::Type, const Token &token);
+void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, VariableType::Type to);
+size_t sizeOfType(VariableType::Type type);

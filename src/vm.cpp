@@ -130,7 +130,8 @@ uint32_t VM::topStack() {
 
 void VM::run(const Program &program) {
     if (callStack.front().localsSize != program.segments.front().locals_capacity) {
-        auto *newPtr = (uint32_t *) realloc(callStack.front().locals, program.segments.front().locals.size());
+        callStack.front().localsSize = program.segments.front().locals_capacity;
+        auto *newPtr = (uint32_t *) realloc(callStack.front().locals, callStack.front().localsSize * sizeof(uint32_t));
         if (newPtr == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         } else {

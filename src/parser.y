@@ -1,12 +1,13 @@
 %{
     #include <iostream>
     #include <vector>
+    #include <stdexcept>
     #include "ast.h"
     #include "lexer.h"
     extern int yylex(void);
 
     static void yyerror(const char* s) {
-        fprintf(stderr, "%s\n", s);
+        throw std::runtime_error(s);
     }
 
     std::vector<AbstractSyntaxTree*> root;
@@ -229,6 +230,10 @@ Expression:
 std::vector<AbstractSyntaxTree*> parse(const char *input) {
     root.clear();
     yy_scan_string(input);
-    if (yyparse() != 0) throw std::runtime_error("Failed to parse input: " + std::string(input));
+    try {
+        yyparse();
+    } catch (std::runtime_error&) {
+        throw std::runtime_error("Failed to parse input: " + std::string(input));
+    }
     return root;
 }

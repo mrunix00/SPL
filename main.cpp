@@ -13,34 +13,40 @@ int readFile(const char *filename) {
     file.close();
     VM vm;
     Program program;
-    compile(program, input.c_str());
-    vm.run(program);
-    if (vm.stackSize == sizeof(int32_t))
-        std::cout << vm.topStack() << std::endl;
-    else if (vm.stackSize == sizeof(int64_t))
+    try {
+        compile(program, input.c_str());
+        vm.run(program);
+    } catch (std::runtime_error &error) {
+        printf("[-] %s\n", error.what());
+        return EXIT_FAILURE;
+    }
+    // TODO: Add handling for other types
+    if (vm.stackSize != 0)
         std::cout << vm.topStack() << std::endl;
     return EXIT_SUCCESS;
 }
 
-[[noreturn]] int repl() {
+int repl() {
     VM vm;
     Program program;
-    while (true) {
+    linenoiseInstallWindowChangeHandler();
+    for (;;) {
         char *input = linenoise("SPL> ");
-        if (input == nullptr) {
-            break;
-        }
+        if (input == nullptr) break;
+        if (*input == '\0') continue;
         linenoiseHistoryAdd(input);
         try {
             compile(program, input);
             vm.run(program);
         } catch (std::runtime_error &error) {
-            std::cout << "[-] " << error.what() << '\n';
+            printf("[-] %s\n", error.what());
+            return EXIT_FAILURE;
         }
         // TODO: Add handling for other types
         if (vm.stackSize != 0)
             std::cout << vm.topStack() << std::endl;
     }
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv) {

@@ -53,7 +53,7 @@ inline void VM::newStackFrame(const Segment &segment, size_t id) {
     StackFrame frame;
     frame.segmentIndex = id;
     frame.localsSize = segment.locals_capacity;
-    frame.locals = (uint32_t *) malloc(frame.localsSize);
+    frame.locals = (uint32_t *) malloc(frame.localsSize * sizeof(uint32_t));
     if (frame.locals == nullptr) {
         throw std::runtime_error("Memory allocation failure!");
     }

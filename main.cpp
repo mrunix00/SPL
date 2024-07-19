@@ -3,6 +3,28 @@
 #include <fstream>
 #include <iostream>
 
+void printTopStack(VM &vm) {
+    if (vm.stackSize == 0) return;
+    auto top = vm.topStack();
+    switch (top.type) {
+        case VariableType::Bool:
+            std::cout << (top.value == 0 ? "false" : "true") << std::endl;
+            break;
+        case VariableType::I32:
+            std::cout << (int32_t) top.value << std::endl;
+            break;
+        case VariableType::I64: {
+            auto val = vm.topDoubleStack();
+            std::cout << val.value << std::endl;
+        } break;
+        case VariableType::U32:
+            std::cout << (uint32_t) top.value << std::endl;
+            break;
+        default:
+            return;
+    }
+}
+
 int readFile(const char *filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -20,9 +42,7 @@ int readFile(const char *filename) {
         printf("[-] %s\n", error.what());
         return EXIT_FAILURE;
     }
-    // TODO: Add handling for other types
-    if (vm.stackSize != 0)
-        std::cout << vm.topStack() << std::endl;
+    printTopStack(vm);
     return EXIT_SUCCESS;
 }
 
@@ -40,11 +60,9 @@ int repl() {
             vm.run(program);
         } catch (std::runtime_error &error) {
             printf("[-] %s\n", error.what());
-            return EXIT_FAILURE;
+            continue;
         }
-        // TODO: Add handling for other types
-        if (vm.stackSize != 0)
-            std::cout << vm.topStack() << std::endl;
+        printTopStack(vm);
     }
     return EXIT_SUCCESS;
 }

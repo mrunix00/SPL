@@ -82,7 +82,7 @@ struct Instruction {
 };
 
 struct VariableType {
-    enum Type {
+    enum Type : uint8_t {
         Invalid = 0,
         Bool,
         I32,
@@ -128,15 +128,39 @@ struct Program {
     Variable find_function(const Segment &segment, const std::string &identifier);
 };
 
+struct StackObject {
+    VariableType::Type type;
+    uint32_t value;
+
+    bool operator==(const StackObject &other) const {
+        return type == other.type && value == other.value;
+    }
+    bool operator==(int32_t other) const {
+        return value == other;
+    }
+};
+
+struct DoubleStackObject {
+    VariableType::Type type;
+    uint64_t value;
+
+    bool operator==(const StackObject &other) const {
+        return type == other.type && value == other.value;
+    }
+    bool operator==(int64_t other) const {
+        return value == other;
+    }
+};
+
 struct StackFrame {
-    uint32_t *locals{};
+    StackObject *locals{};
     size_t localsSize{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
 
 class VM {
-    uint32_t *stack;
+    StackObject *stack;
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 
@@ -144,20 +168,20 @@ public:
     VM();
     void newStackFrame(const Segment &segment, size_t id);
     void popStackFrame();
-    uint32_t getLocal(size_t index);
-    void setLocal(size_t index, uint32_t value);
-    uint32_t getGlobal(size_t index);
-    void setGlobal(size_t index, uint32_t value);
-    uint64_t getDoubleLocal(size_t index);
-    void setDoubleLocal(size_t index, uint64_t value);
-    uint64_t getDoubleGlobal(size_t index);
-    void setDoubleGlobal(size_t index, uint64_t value);
-    void pushStack(uint32_t value);
-    void pushDoubleStack(uint64_t value);
-    uint32_t popStack();
-    uint64_t popDoubleStack();
-    uint32_t topStack();
-    [[maybe_unused]] [[maybe_unused]] uint64_t topDoubleStack();
+    StackObject getLocal(size_t index);
+    void setLocal(size_t index, StackObject value);
+    StackObject getGlobal(size_t index);
+    void setGlobal(size_t index, StackObject value);
+    DoubleStackObject getDoubleLocal(size_t index);
+    void setDoubleLocal(size_t index, DoubleStackObject value);
+    DoubleStackObject getDoubleGlobal(size_t index);
+    void setDoubleGlobal(size_t index, DoubleStackObject value);
+    void pushStack(StackObject value);
+    void pushDoubleStack(DoubleStackObject value);
+    StackObject popStack();
+    DoubleStackObject popDoubleStack();
+    StackObject topStack();
+    [[maybe_unused]] [[maybe_unused]] DoubleStackObject topDoubleStack();
 
     void run(const Program &program);
     size_t stackSize{};

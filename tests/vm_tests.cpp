@@ -92,7 +92,7 @@ TEST(VM, SimpleI64VariableDeclaration) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(vm.topDoubleStack(), 42);
+    ASSERT_EQ(vm.topDoubleStack(), static_cast<int64_t >(42));
 }
 
 TEST(VM, BinaryExpressionWithMultipleTypes) {

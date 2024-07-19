@@ -20,6 +20,13 @@ void Node::compile(Program &program, Segment &segment) const {
         case Identifier: {
             return emitLoad(program, segment, token.value);
         }
+        case False:
+        case True:
+            return segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::LoadI32,
+                            .params = {.i32 = token.value == "true"},
+                    });
         default:
             throw std::runtime_error("[Node::compile] This should not be accessed!");
     }
@@ -48,7 +55,7 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
     }
     auto leftType = deduceType(program, segment, left);
     auto rightType = deduceType(program, segment, right);
-    auto finalType = deduceType(program, segment, (AbstractSyntaxTree *) this);
+    auto finalType = biggestType(leftType, rightType);
 
     left->compile(program, segment);
     typeCast(segment.instructions, leftType, finalType);
@@ -130,6 +137,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
     switch (type.value()->nodeType) {
         case AbstractSyntaxTree::Type::Node: {
             switch (((Node *) type.value())->token.type) {
+                case Bool:
                 DECLARE_VAR_CASE(U32, u32, uint32_t)
                 DECLARE_VAR_CASE(I32, i32, int32_t)
                 DECLARE_VAR_CASE(I64, i64, int64_t)
@@ -301,6 +309,8 @@ bool IfStatement::operator==(const AbstractSyntaxTree &other) const {
            elseBody.has_value() == otherIfStatement.elseBody.has_value();
 }
 void IfStatement::compile(Program &program, Segment &segment) const {
+    if (deduceType(program, segment, condition) != VariableType::Bool)
+        throw std::runtime_error("[IfStatement::compile] Condition must be a boolean!");
     condition->compile(program, segment);
     size_t jumpIndex = segment.instructions.size();
     segment.instructions.push_back(

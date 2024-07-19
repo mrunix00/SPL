@@ -22,6 +22,7 @@
             throw std::runtime_error("[Node::compile] Identifier not found: " + identifier);                \
         }                                                                                                   \
         switch (type->type) {                                                                               \
+            case VariableType::Type::Bool:                                                                  \
             case VariableType::Type::I32:                                                                   \
                 instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalI32              \
                                            : Instruction::InstructionType::OPERATION##GlobalI32;            \
@@ -105,3 +106,4 @@ Instruction getInstructionWithType(GenericInstruction instruction, VariableType:
 Instruction emitLoad(VariableType::Type, const Token &token);
 void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, VariableType::Type to);
 size_t sizeOfType(VariableType::Type type);
+VariableType::Type biggestType(VariableType::Type first, VariableType::Type second);

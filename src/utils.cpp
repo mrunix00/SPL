@@ -10,6 +10,7 @@ VariableType::Type varTypeConvert(AbstractSyntaxTree *ast) {
         throw std::runtime_error("[Declaration::compile] Invalid type: " + ast->typeStr);
     auto token = dynamic_cast<Node *>(ast)->token;
     static std::unordered_map<int, VariableType::Type> types = {
+            {Bool, VariableType::Bool},
             {I32, VariableType::I32},
             {I64, VariableType::I64},
             {U32, VariableType::U32},
@@ -60,6 +61,9 @@ VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntax
         case AbstractSyntaxTree::Type::Node: {
             auto token = dynamic_cast<Node *>(ast)->token;
             switch (token.type) {
+                case True:
+                case False:
+                    return VariableType::Bool;
                 case Number: {
                     try {
                         std::stoi(token.value);
@@ -91,15 +95,18 @@ VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntax
             return deduceType(program, segment, unary->expression);
         }
         case AbstractSyntaxTree::Type::BinaryExpression: {
-            auto binary = dynamic_cast<BinaryExpression *>(ast);
-            auto left = deduceType(program, segment, binary->left);
-            auto right = deduceType(program, segment, binary->right);
+            auto binaryExpr = dynamic_cast<BinaryExpression *>(ast);
+            if (binaryExpr->op.type == Less || binaryExpr->op.type == Greater || binaryExpr->op.type == LessEqual ||
+                binaryExpr->op.type == GreaterEqual || binaryExpr->op.type == Equal || binaryExpr->op.type == NotEqual)
+                return VariableType::Bool;
+            auto left = deduceType(program, segment, binaryExpr->left);
+            auto right = deduceType(program, segment, binaryExpr->right);
             return biggestType(left, right);
         }
         case AbstractSyntaxTree::Type::FunctionCall: {
             auto call = dynamic_cast<FunctionCall *>(ast);
             auto function = program.find_function(segment, call->identifier.token.value);
-            return ((FunctionType*) function.type)->returnType->type;
+            return ((FunctionType *) function.type)->returnType->type;
         }
         case AbstractSyntaxTree::Type::Declaration: {
             auto declaration = dynamic_cast<Declaration *>(ast);
@@ -115,6 +122,8 @@ VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntax
 #define TYPE_CASE(INS)                                                             \
     case GenericInstruction::INS: {                                                \
         switch (type) {                                                            \
+            case VariableType::U32:                                                \
+            case VariableType::Bool:                                               \
             case VariableType::I32:                                                \
                 return {Instruction::InstructionType::INS##I32};                   \
             case VariableType::I64:                                                \
@@ -141,6 +150,7 @@ Instruction getInstructionWithType(GenericInstruction instruction, VariableType:
 
 Instruction emitLoad(VariableType::Type type, const Token &token) {
     switch (type) {
+        case VariableType::Bool:
         case VariableType::I32:
             return Instruction{
                     .type = Instruction::InstructionType::LoadI32,

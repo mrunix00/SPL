@@ -76,6 +76,16 @@ TEST(VM, TypeDeduction) {
     ASSERT_EQ(vm.topStack(), 42);
 }
 
+TEST(VM, DeclareBooleans) {
+    const char *input = "define a : bool = true;"
+                        "define b : bool = false;"
+                        "a == b;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(vm.topStack(), 0);
+}
+
 TEST(VM, SimpleI64VariableDeclaration) {
     const char *input = "define a : i64 = 42;"
                         "a;";

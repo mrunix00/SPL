@@ -77,6 +77,9 @@ VarType:
     | I64 { $$ = new Node({I64, "i64"}); }
     | F32 { $$ = new Node({F32, "f32"}); }
     | F64 { $$ = new Node({F64, "f64"}); }
+    | Bool { $$ = new Node({Bool, "bool"}); }
+    | True { $$ = new Node({True, "true"}); }
+    | False { $$ = new Node({False, "false"}); }
 ;
 
 ArgumentDeclaration:

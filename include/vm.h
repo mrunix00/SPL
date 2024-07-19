@@ -84,6 +84,7 @@ struct Instruction {
 struct VariableType {
     enum Type {
         Invalid = 0,
+        Bool,
         I32,
         I64,
         U32,

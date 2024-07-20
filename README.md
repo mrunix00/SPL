@@ -16,15 +16,13 @@ You need to have the following installed on your system:
 ### Cloning the repo
 ```console
 git clone https://github.com/mrunix00/SPL.git
-cd SPL/
-git submodule update --init
 ```
 
 ### Build
 ```console
-mkdir build && cd build
-cmake .. && cmake --build .
-./SPL
+cd SPL/
+make -j4
+./build/SPL
 ```
 
 ## Syntax

@@ -283,8 +283,9 @@ void FunctionCall::compile(Program &program, Segment &segment) const {
     for (int i = 0; i < arguments.size(); i++) {
         auto argument = arguments[i];
         auto definedArgument = functionType->arguments[i];
-        if (deduceType(program, segment, argument) != definedArgument->type)
-            throw std::runtime_error("[FunctionCall::compile] Argument type mismatch!");
+        typeCast(segment.instructions,
+                 deduceType(program, segment, argument),
+                 definedArgument->type);
         argument->compile(program, segment);
     }
 

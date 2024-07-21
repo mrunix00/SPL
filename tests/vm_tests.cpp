@@ -241,3 +241,12 @@ TEST(VM, SimpleForLoop) {
     vm.run(program);
     ASSERT_EQ(vm.topStack(), 45);
 }
+
+TEST(VM, DeclareStrings) {
+    const char *input = "define string : str = \"Hello World\";"
+                        "string;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(vm.topDoubleStack(), "Hello World");
+}

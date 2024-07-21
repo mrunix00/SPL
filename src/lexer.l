@@ -11,7 +11,19 @@
 \/\/(.*)                    { /* ignore comments */ }
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* ignore multi-line comments */ }
 [0-9]+                      { yylval.str = strdup(yytext); return Number; }
-\"([^\\\"]|\\.)*\"          { return String;}
+\"([^\\"]|\\.)*\"           {
+    size_t len = yyleng - 2;
+    char* str = (char*)malloc(len + 1);
+    if (!str) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    strncpy(str, yytext + 1, len);
+    str[len] = '\0';
+    yylval.str = str;
+    yytext = str;
+    return String;
+}
 "++"                        { return Increment; }
 "--"                        { return Decrement; }
 "+="                        { return IncrementAssign; }
@@ -49,6 +61,7 @@
 "f32"                       { return F32; }
 "f64"                       { return F64; }
 "bool"                      { return Bool; }
+"str"                       { return Str; }
 "true"                      { return True; }
 "false"                     { return False; }
 ":"                         { return Colon; }

@@ -20,15 +20,15 @@
     char* str;
 }
 
-%token String Plus Minus Multiply Divide Modulo Assign
+%token Plus Minus Multiply Divide Modulo Assign
 %token Increment Decrement IncrementAssign DecrementAssign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define Function If Else While For Return
-%token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool True False
+%token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool True False Str
 %token Colon Comma Semicolon Arrow Newline
 %token LParen RParen LBrace RBrace LBracket RBracket
 
-%token <str> Number Identifier
+%token <str> Number String Identifier
 %type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement ForLoop
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
 
@@ -80,6 +80,7 @@ VarType:
     | Bool { $$ = new Node({Bool, "bool"}); }
     | True { $$ = new Node({True, "true"}); }
     | False { $$ = new Node({False, "false"}); }
+    | Str { $$ = new Node({Str, "str"}); }
 ;
 
 ArgumentDeclaration:
@@ -170,6 +171,7 @@ UnaryExpression:
 Expression:
     Identifier { $$ = new Node({Identifier, $1}); }
     | Number { $$ = new Node({Number, $1}); }
+    | String { $$ = new Node({String, $1}); }
     | FunctionDeclaration { $$ = $1; }
     | VarType { $$ = $1; }
     | ScopedBody { $$ = $1; }

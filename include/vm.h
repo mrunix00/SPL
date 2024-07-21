@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include <stack>
+#include <cstring>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -41,18 +43,23 @@ struct Instruction {
         StoreGlobalI32,
         StoreGlobalI64,
         StoreGlobalU32,
+        StoreGlobalObject,
         StoreLocalI32,
         StoreLocalI64,
         StoreLocalU32,
+        StoreLocalObject,
         LoadI32,
         LoadU32,
         LoadI64,
+        LoadObject,
         LoadGlobalI32,
         LoadGlobalI64,
         LoadGlobalU32,
+        LoadGlobalObject,
         LoadLocalI32,
         LoadLocalI64,
         LoadLocalU32,
+        LoadLocalObject,
         ConvertI32toI64,
         ConvertU32toI64,
         Return,
@@ -77,7 +84,7 @@ struct Instruction {
         struct {
             size_t index;
             uint32_t u32;
-        } ru64;
+        } ru32;
     } params{};
 };
 
@@ -88,6 +95,7 @@ struct VariableType {
         I32,
         I64,
         U32,
+        Object,
         Function
     } type;
     explicit VariableType(Type type) : type(type){};
@@ -98,6 +106,21 @@ struct FunctionType : public VariableType {
     std::vector<VariableType *> arguments;
     FunctionType(VariableType *returnType, std::vector<VariableType *> arguments)
         : VariableType(Function), returnType(returnType), arguments(std::move(arguments)){};
+};
+
+struct Object {
+    enum class Type {
+        Invalid = 0,
+        String
+    } objType;
+    Object() : objType(Type::Invalid){};
+    explicit Object(Type type) : objType(type){};
+};
+
+struct StringObject : public Object {
+    size_t length;
+    char *chars;
+    StringObject(size_t length, char *chars) : Object(Type::String), length(length), chars(chars){};
 };
 
 struct Variable {
@@ -144,11 +167,25 @@ struct DoubleStackObject {
     VariableType::Type type;
     uint64_t value;
 
+    char *asString() const {
+        if (type != VariableType::Object) throw std::runtime_error("Invalid string!");
+        auto obj = reinterpret_cast<Object *>(value);
+        if (obj->objType != Object::Type::String) throw std::runtime_error("Invalid string!");
+        auto str = static_cast<StringObject *>(obj);
+        return str->chars;
+    }
     bool operator==(const StackObject &other) const {
         return type == other.type && value == other.value;
     }
     bool operator==(int64_t other) const {
         return value == other;
+    }
+    bool operator==(const char *other) const {
+        if (type != VariableType::Object) return false;
+        auto obj = reinterpret_cast<Object *>(value);
+        if (obj->objType != Object::Type::String) return false;
+        auto str = static_cast<StringObject *>(obj);
+        return str->length == strlen(other) && !strcmp(str->chars, other);
     }
 };
 

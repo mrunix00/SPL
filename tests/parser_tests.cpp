@@ -36,6 +36,20 @@ TEST(ParserTests, CompoundBinaryExpression) {
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
 
+TEST(ParserTests, ParseStrings) {
+    const char *input = "x = \"foo\";";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new BinaryExpression(
+                    new Node({Identifier, "x"}),
+                    new Node({String, "foo"}),
+                    {Assign, "="}),
+    };
+    auto actualResult = parse(input);
+
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    ASSERT_EQ(*expectedResult[0], *actualResult[0]);
+}
+
 TEST(ParserTests, MultipleExpressions) {
     const char *input = "1 + 2; 3 + 4; 5 + 6;";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{

@@ -14,6 +14,7 @@ VariableType::Type varTypeConvert(AbstractSyntaxTree *ast) {
             {I32, VariableType::I32},
             {I64, VariableType::I64},
             {U32, VariableType::U32},
+            {Str, VariableType::Object},
     };
     if (types.find(token.type) == types.end())
         throw std::runtime_error("[Declaration::compile] Invalid type: " + token.value);
@@ -61,6 +62,8 @@ VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntax
         case AbstractSyntaxTree::Type::Node: {
             auto token = dynamic_cast<Node *>(ast)->token;
             switch (token.type) {
+                case String:
+                    return VariableType::Object;
                 case True:
                 case False:
                     return VariableType::Bool;
@@ -203,6 +206,7 @@ size_t sizeOfType(VariableType::Type type) {
         case VariableType::I32:
         case VariableType::U32:
             return 1;
+        case VariableType::Object:
         case VariableType::I64:
             return 2;
         default:

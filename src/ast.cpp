@@ -13,6 +13,14 @@ bool Node::operator==(const AbstractSyntaxTree &other) const {
 }
 void Node::compile(Program &program, Segment &segment) const {
     switch (token.type) {
+        case String: {
+            auto string = new StringObject(token.value.size(), (char *) token.value.c_str());
+            segment.instructions.push_back(
+                    Instruction{
+                            .type = Instruction::InstructionType::LoadObject,
+                            .params = {.ptr = string},
+                    });
+        } break;
         case Number: {
             auto type = deduceType(program, segment, (AbstractSyntaxTree *) this);
             return segment.instructions.push_back(emitLoad(type, token));
@@ -137,10 +145,15 @@ void Declaration::compile(Program &program, Segment &segment) const {
     switch (type.value()->nodeType) {
         case AbstractSyntaxTree::Type::Node: {
             switch (((Node *) type.value())->token.type) {
+                case Str: {
+                    value.value()->compile(program, segment);
+                    segment.declare_variable(identifier.token.value, new VariableType(VariableType::Object));
+                    emitStore(program, segment, identifier.token.value);
+                } break;
                 case Bool:
-                DECLARE_VAR_CASE(U32, u32, uint32_t)
-                DECLARE_VAR_CASE(I32, i32, int32_t)
-                DECLARE_VAR_CASE(I64, i64, int64_t)
+                    DECLARE_VAR_CASE(U32, u32, uint32_t)
+                    DECLARE_VAR_CASE(I32, i32, int32_t)
+                    DECLARE_VAR_CASE(I64, i64, int64_t)
                 default:
                     throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
             }

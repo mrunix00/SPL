@@ -20,6 +20,13 @@ void printTopStack(VM &vm) {
         case VariableType::U32:
             std::cout << (uint32_t) top.value << std::endl;
             break;
+        case VariableType::Object: {
+            auto stackObj = vm.topDoubleStack();
+            auto obj = reinterpret_cast<Object *>(stackObj.value);
+            if (obj->objType == Object::Type::String) {
+                std::cout << stackObj.asString() << std::endl;
+            }
+        }
         default:
             return;
     }

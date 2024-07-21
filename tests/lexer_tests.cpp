@@ -49,7 +49,7 @@ TEST(Lexer, Identifier) {
 TEST(Lexer, String) {
     auto actual = lex("\"foo\"");
     std::vector<Token> expected = {
-            {String, "\"foo\""},
+            {String, "foo"},
             {YYEOF},
     };
     TEST_LEX(actual, expected)
@@ -110,7 +110,7 @@ TEST(Lexer, Symbols) {
 TEST(Lexer, Keywords) {
     auto actual = lex(
             "define if else while for return "
-            "u8 u16 u32 u64 i8 i16 i32 i64 "
+            "u8 u16 u32 u64 i8 i16 i32 i64 str "
             "f32 f64 bool true false");
 
     std::vector<Token> expected = {
@@ -128,6 +128,7 @@ TEST(Lexer, Keywords) {
             {I16, "i16"},
             {I32, "i32"},
             {I64, "i64"},
+            {Str, "str"},
             {F32, "f32"},
             {F64, "f64"},
             {Bool, "bool"},

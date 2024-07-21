@@ -22,6 +22,11 @@
             throw std::runtime_error("[Node::compile] Identifier not found: " + identifier);                \
         }                                                                                                   \
         switch (type->type) {                                                                               \
+            case VariableType::Type::Object:                                                                \
+                instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalObject           \
+                                           : Instruction::InstructionType::OPERATION##GlobalObject;         \
+                instruction.params.index = id;                                                              \
+                break;                                                                                      \
             case VariableType::Type::Bool:                                                                  \
             case VariableType::Type::I32:                                                                   \
                 instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalI32              \

@@ -1,6 +1,7 @@
 #include "vm.h"
 #include "utils.h"
-#include <cstring>
+#include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 
 Program::Program() {
@@ -218,17 +219,17 @@ void VM::run(const Program &program) {
                 setGlobal(instruction.params.index, val);
             } break;
             case Instruction::InstructionType::LoadGlobalU32:
-            case Instruction::InstructionType::LoadGlobalI32:{
+            case Instruction::InstructionType::LoadGlobalI32: {
                 auto val = getGlobal(instruction.params.index);
                 pushStack(val);
             } break;
             case Instruction::InstructionType::StoreLocalU32:
-            case Instruction::InstructionType::StoreLocalI32:{
+            case Instruction::InstructionType::StoreLocalI32: {
                 auto val = popStack();
                 setLocal(instruction.params.index, val);
             } break;
             case Instruction::InstructionType::LoadLocalU32:
-            case Instruction::InstructionType::LoadLocalI32:{
+            case Instruction::InstructionType::LoadLocalI32: {
                 auto val = getLocal(instruction.params.index);
                 pushStack(val);
             } break;
@@ -332,10 +333,12 @@ void VM::run(const Program &program) {
                 auto val = popDoubleStack();
                 pushDoubleStack({VariableType::I64, val.value - 1});
             } break;
+            case Instruction::StoreGlobalObject:
             case Instruction::StoreGlobalI64: {
                 auto val = popDoubleStack();
                 setDoubleGlobal(instruction.params.index, val);
             } break;
+            case Instruction::StoreLocalObject:
             case Instruction::StoreLocalI64: {
                 auto val = popDoubleStack();
                 setDoubleLocal(instruction.params.index, val);
@@ -343,10 +346,12 @@ void VM::run(const Program &program) {
             case Instruction::LoadI64: {
                 pushDoubleStack({VariableType::I64, static_cast<uint64_t>(instruction.params.i64)});
             } break;
+            case Instruction::LoadGlobalObject:
             case Instruction::LoadGlobalI64: {
                 auto val = getDoubleGlobal(instruction.params.index);
                 pushDoubleStack(val);
             } break;
+            case Instruction::LoadLocalObject:
             case Instruction::LoadLocalI64: {
                 auto val = getDoubleLocal(instruction.params.index);
                 pushDoubleStack(val);
@@ -355,6 +360,9 @@ void VM::run(const Program &program) {
             case Instruction::ConvertU32toI64: {
                 auto val = popStack();
                 pushDoubleStack({VariableType::I64, val.value});
+            } break;
+            case Instruction::LoadObject: {
+                pushDoubleStack({VariableType::Object, reinterpret_cast<uint64_t>(instruction.params.ptr)});
             } break;
         }
         callStack.back().currentInstruction++;

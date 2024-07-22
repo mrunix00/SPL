@@ -89,7 +89,7 @@ struct Instruction {
 };
 
 struct VariableType {
-    enum Type : uint8_t {
+    enum Type : uint32_t {
         Invalid = 0,
         Bool,
         I32,
@@ -151,7 +151,7 @@ struct Program {
     Variable find_function(const Segment &segment, const std::string &identifier);
 };
 
-struct StackObject {
+struct alignas(uint32_t) StackObject {
     VariableType::Type type;
     uint32_t value;
 
@@ -190,14 +190,14 @@ struct DoubleStackObject {
 };
 
 struct StackFrame {
-    StackObject *locals{};
+    void *locals{};
     size_t localsSize{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
 
 class VM {
-    StackObject *stack;
+    void *stack;
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 

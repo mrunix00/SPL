@@ -2,6 +2,7 @@
 #include "utils.h"
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 #include <stdexcept>
 
 Program::Program() {
@@ -45,7 +46,7 @@ void Segment::declare_function(const std::string &name, VariableType *funcType, 
 
 VM::VM() {
     stackCapacity = 1024;
-    stack = (StackObject *) malloc(stackCapacity * sizeof(StackObject));
+    stack = (uint64_t *) malloc(stackCapacity * sizeof(uint64_t));
     if (stack == nullptr)
         throw std::runtime_error("Memory allocation failure!");
     callStack.push_back(StackFrame{});
@@ -54,99 +55,96 @@ inline void VM::newStackFrame(const Segment &segment, size_t id) {
     StackFrame frame;
     frame.segmentIndex = id;
     frame.localsSize = segment.locals_capacity;
-    frame.locals = (StackObject *) malloc(frame.localsSize * sizeof(uint32_t));
+    frame.locals = malloc(frame.localsSize * sizeof(uint64_t));
     if (frame.locals == nullptr) {
         throw std::runtime_error("Memory allocation failure!");
     }
     callStack.push_back(frame);
-    for (size_t i = segment.locals_capacity - 1; i != -1; i--) {
+    for (size_t i = frame.localsSize - 1; i != -1; i--) {
         auto val = popStack();
         setLocal(i, val);
     }
+
+//    std::cout << "New stack frame: " << callStack.size() << " Stack size: " << stackSize << std::endl;
 }
 inline void VM::popStackFrame() {
     free(callStack.back().locals);
     callStack.pop_back();
 }
 inline StackObject VM::getLocal(const size_t index) {
-    return callStack.back().locals[index];
+    return ((StackObject *) callStack.back().locals)[index];
 }
 inline void VM::setLocal(const size_t index, StackObject value) {
-    callStack.back().locals[index] = value;
+    ((StackObject *) callStack.back().locals)[index] = value;
 }
 inline StackObject VM::getGlobal(size_t index) {
-    return callStack[0].locals[index];
+    return ((StackObject *) callStack[0].locals)[index];
 }
 inline void VM::setGlobal(const size_t index, StackObject value) {
-    callStack.front().locals[index] = value;
+    ((StackObject *) callStack.front().locals)[index] = value;
 }
 inline DoubleStackObject VM::getDoubleLocal(const size_t index) {
-    auto high = getLocal(index);
-    auto low = getLocal(index + 1);
-    auto comp = (static_cast<uint64_t>(high.value) << 32) | (static_cast<uint32_t>(low.value) & 0xFFFFFFFF);
-    return {high.type, comp};
+    auto value = ((uint64_t *) callStack.back().locals)[index];
+    auto type = ((uint64_t *) callStack.back().locals)[index + 1];
+    return {(VariableType::Type) type, value};
 }
 inline void VM::setDoubleLocal(const size_t index, DoubleStackObject value) {
-    uint32_t high = value.value >> 32;
-    uint32_t low = value.value & 0xFFFFFFFF;
-    setLocal(index, {value.type, high});
-    setLocal(index + 1, {value.type, low});
+    ((uint64_t *) callStack.back().locals)[index] = value.value;
+    ((uint64_t *) callStack.back().locals)[index + 1] = value.type;
 }
 inline DoubleStackObject VM::getDoubleGlobal(size_t index) {
-    auto high = getGlobal(index);
-    auto low = getGlobal(index + 1);
-    auto comp = (static_cast<uint64_t>(high.value) << 32) | (static_cast<uint32_t>(low.value) & 0xFFFFFFFF);
-    return {high.type, comp};
+    auto value = ((uint64_t *) callStack.front().locals)[index];
+    auto type = ((uint64_t *) callStack.front().locals)[index + 1];
+    return {(VariableType::Type) type, value};
 }
 inline void VM::setDoubleGlobal(const size_t index, DoubleStackObject value) {
-    uint32_t high = value.value >> 32;
-    uint32_t low = value.value & 0xFFFFFFFF;
-    setGlobal(index, {value.type, high});
-    setGlobal(index + 1, {value.type, low});
+    ((uint64_t *) callStack.front().locals)[index] = value.value;
+    ((uint64_t *) callStack.front().locals)[index + 1] = value.type;
 }
 inline void VM::pushStack(StackObject value) {
     if (stackSize + 1 > stackCapacity) {
         stackCapacity *= 2;
-        stack = (StackObject *) realloc(stack, stackCapacity);
-        if (stack == nullptr) {
+        auto newStack = realloc(stack, stackCapacity * sizeof(uint64_t));
+        if (newStack == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         }
+        stack = newStack;
     }
-    stack[stackSize++] = value;
+    ((StackObject *) stack)[stackSize++] = value;
 }
 inline void VM::pushDoubleStack(DoubleStackObject value) {
     if (stackSize + 2 > stackCapacity) {
         stackCapacity *= 2;
-        stack = (StackObject *) realloc(stack, stackCapacity);
+        auto newStack = realloc(stack, stackCapacity * sizeof(uint64_t));
+        if (newStack == nullptr) {
+            throw std::runtime_error("Memory allocation failure!");
+        }
+        stack = newStack;
     }
-    uint32_t high = value.value >> 32;
-    uint32_t low = value.value & 0xFFFFFFFF;
-    pushStack({value.type, high});
-    pushStack({value.type, low});
+    ((uint64_t *) stack)[stackSize++] = value.value;
+    ((uint64_t *) stack)[stackSize++] = value.type;
 }
 inline StackObject VM::popStack() {
-    return stack[--stackSize];
+    return ((StackObject *) stack)[--stackSize];
 }
 inline DoubleStackObject VM::popDoubleStack() {
-    auto low = popStack();
-    auto high = popStack();
-    auto comp = (static_cast<uint64_t>(high.value) << 32) | (static_cast<uint32_t>(low.value) & 0xFFFFFFFF);
-    return {high.type, comp};
+    auto type = ((uint64_t *) stack)[--stackSize];
+    auto value = ((uint64_t *) stack)[--stackSize];
+    return {(VariableType::Type) type, value};
 }
 StackObject VM::topStack() {
-    return stack[stackSize - 1];
+    return ((StackObject *) stack)[stackSize - 1];
 }
 [[maybe_unused]] DoubleStackObject VM::topDoubleStack() {
-    auto low = stack[stackSize - 1];
-    auto high = stack[stackSize - 2];
-    auto comp = (static_cast<uint64_t>(high.value) << 32) | (static_cast<uint32_t>(low.value) & 0xFFFFFFFF);
-    return {high.type, comp};
+    auto type = ((uint64_t *) stack)[stackSize - 1];
+    auto value = ((uint64_t *) stack)[stackSize - 2];
+    return {(VariableType::Type) type, value};
 }
 
 void VM::run(const Program &program) {
     if (callStack.front().localsSize != program.segments.front().locals_capacity) {
         callStack.front().localsSize = program.segments.front().locals_capacity;
-        auto *newPtr = (StackObject *) realloc(callStack.front().locals, callStack.front().localsSize * sizeof(uint32_t));
+        auto *newPtr = (uint64_t *) realloc(callStack.front().locals, callStack.front().localsSize * sizeof(uint64_t));
         if (newPtr == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         } else {

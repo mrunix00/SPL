@@ -182,8 +182,15 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
             switch (to) {
                 case VariableType::U32:
                     return;
-                case VariableType::I64:
+                case VariableType::I64: {
+                    if (instructions.back().type == Instruction::InstructionType::LoadI32) {
+                        instructions.back().type = Instruction::InstructionType::LoadI64;
+                        auto oldVal = instructions.back().params.i32;
+                        instructions.back().params.i64 = oldVal;
+                        return;
+                    }
                     return instructions.push_back({.type = Instruction::InstructionType::ConvertI32toI64});
+                }
                 default:
                     throw std::runtime_error("Invalid type cast");
             }
@@ -191,8 +198,15 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
             switch (to) {
                 case VariableType::I32:
                     return;
-                case VariableType::I64:
+                case VariableType::I64: {
+                    if (instructions.back().type == Instruction::InstructionType::LoadU32) {
+                        instructions.back().type = Instruction::InstructionType::LoadI64;
+                        auto oldVal = instructions.back().params.u32;
+                        instructions.back().params.i64 = oldVal;
+                        return;
+                    }
                     return instructions.push_back({.type = Instruction::InstructionType::ConvertU32toI64});
+                }
                 default:
                     throw std::runtime_error("Invalid type cast");
             }

@@ -283,10 +283,10 @@ void FunctionCall::compile(Program &program, Segment &segment) const {
     for (int i = 0; i < arguments.size(); i++) {
         auto argument = arguments[i];
         auto definedArgument = functionType->arguments[i];
+        argument->compile(program, segment);
         typeCast(segment.instructions,
                  deduceType(program, segment, argument),
                  definedArgument->type);
-        argument->compile(program, segment);
     }
 
     segment.instructions.push_back(

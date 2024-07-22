@@ -61,11 +61,14 @@ inline void VM::newStackFrame(const Segment &segment, size_t id) {
     }
     callStack.push_back(frame);
     for (size_t i = frame.localsSize - 1; i != -1; i--) {
-        auto val = popStack();
-        setLocal(i, val);
+        if (((uint64_t *) stack)[stackSize - 1] == VariableType::Type::I64) {
+            auto val = popDoubleStack();
+            setDoubleLocal(--i, val);
+        } else {
+            auto val = popStack();
+            setLocal(i, val);
+        }
     }
-
-//    std::cout << "New stack frame: " << callStack.size() << " Stack size: " << stackSize << std::endl;
 }
 inline void VM::popStackFrame() {
     free(callStack.back().locals);

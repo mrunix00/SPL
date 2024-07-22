@@ -140,6 +140,7 @@ struct Segment {
     size_t locals_capacity;
     size_t id{};
     size_t find_local(const std::string &identifier);
+    VariableType *returnType{};
     void declare_variable(const std::string &name, VariableType *varType);
     void declare_function(const std::string &name, VariableType *funcType, size_t index);
 };

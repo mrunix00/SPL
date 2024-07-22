@@ -163,18 +163,21 @@ void Declaration::compile(Program &program, Segment &segment) const {
             auto newSegment = Segment{.id = program.segments.size()};
             auto returnType = new VariableType(varTypeConvert(functionDeclaration->returnType));
             auto arguments = std::vector<VariableType *>();
+            newSegment.returnType = returnType;
             for (auto arg: functionDeclaration->arguments)
                 arguments.push_back(new VariableType(varTypeConvert(arg->type.value())));
             segment.declare_function(identifier.token.value,
                                      new FunctionType(returnType, arguments),
                                      program.segments.size());
+            size_t index = 0;
             for (auto argument: functionDeclaration->arguments) {
                 newSegment.locals[argument->identifier.token.value] = Variable(
                         argument->identifier.token.value,
                         new VariableType(deduceType(program, segment, argument)),
-                        newSegment.locals.size(),
+                        index,
                         sizeOfType(varTypeConvert(functionDeclaration->returnType)));
                 newSegment.locals_capacity += sizeOfType(deduceType(program, segment, argument));
+                index += sizeOfType(varTypeConvert(argument->type.value()));
             }
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);
@@ -240,6 +243,8 @@ bool ReturnStatement::operator==(const AbstractSyntaxTree &other) const {
 }
 void ReturnStatement::compile(Program &program, Segment &segment) const {
     expression->compile(program, segment);
+    if (deduceType(program, segment, expression) != segment.returnType->type)
+        typeCast(segment.instructions, deduceType(program, segment, expression), segment.returnType->type);
     segment.instructions.push_back(
             Instruction{
                     .type = Instruction::InstructionType::Return,

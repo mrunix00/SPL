@@ -2,7 +2,6 @@
 #include "utils.h"
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <stdexcept>
 
 Program::Program() {
@@ -50,6 +49,11 @@ VM::VM() {
     if (stack == nullptr)
         throw std::runtime_error("Memory allocation failure!");
     callStack.push_back(StackFrame{});
+}
+VM::~VM() {
+    free(stack);
+    for (auto stackFrame: callStack)
+        free(stackFrame.locals);
 }
 inline void VM::newStackFrame(const Segment &segment, size_t id) {
     StackFrame frame;

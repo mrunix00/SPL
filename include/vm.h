@@ -204,6 +204,7 @@ class VM {
 
 public:
     VM();
+    ~VM();
     void newStackFrame(const Segment &segment, size_t id);
     void popStackFrame();
     StackObject getLocal(size_t index);

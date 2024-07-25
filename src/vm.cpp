@@ -65,12 +65,21 @@ inline void VM::newStackFrame(const Segment &segment, size_t id) {
     }
     callStack.push_back(frame);
     for (size_t i = frame.localsSize - 1; i != -1; i--) {
-        if (((uint64_t *) stack)[stackSize - 1] == VariableType::Type::I64) {
-            auto val = popDoubleStack();
-            setDoubleLocal(--i, val);
-        } else {
-            auto val = popStack();
-            setLocal(i, val);
+        switch (topStack().type) {
+            case VariableType::Type::I64:
+            case VariableType::Type::Object: {
+                auto val = popDoubleStack();
+                setDoubleLocal(--i, val);
+            } break;
+            case VariableType::Type::I32:
+            case VariableType::Type::U32:
+            case VariableType::Type::Bool: {
+                auto val = popStack();
+                setLocal(i, val);
+            } break;
+            case VariableType::Type::Function:
+            case VariableType::Type::Invalid:
+                throw std::runtime_error("Invalid stack operation!");
         }
     }
 }

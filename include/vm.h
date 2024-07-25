@@ -152,9 +152,14 @@ struct Program {
     Variable find_function(const Segment &segment, const std::string &identifier);
 };
 
-struct alignas(uint32_t) StackObject {
-    VariableType::Type type;
-    uint32_t value;
+struct StackObject {
+    union {
+        uint64_t val64;
+        struct alignas(uint32_t) {
+            VariableType::Type type;
+            uint32_t value;
+        };
+    };
 
     bool operator==(const StackObject &other) const {
         return type == other.type && value == other.value;
@@ -191,14 +196,14 @@ struct DoubleStackObject {
 };
 
 struct StackFrame {
-    uint64_t *locals{};
+    StackObject *locals{};
     size_t localsSize{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
 
 class VM {
-    uint64_t *stack;
+    StackObject *stack;
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 

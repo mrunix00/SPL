@@ -191,14 +191,14 @@ struct DoubleStackObject {
 };
 
 struct StackFrame {
-    void *locals{};
+    uint64_t *locals{};
     size_t localsSize{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
 
 class VM {
-    void *stack;
+    uint64_t *stack;
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 

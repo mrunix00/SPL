@@ -21,7 +21,7 @@ git clone https://github.com/mrunix00/SPL.git
 ### Build
 ```console
 cd SPL/
-make -j4
+make -j`nproc`
 ./build/SPL
 ```
 

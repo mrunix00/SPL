@@ -121,6 +121,15 @@ struct StringObject : public Object {
     size_t length;
     char *chars;
     StringObject(size_t length, char *chars) : Object(Type::String), length(length), chars(chars){};
+    inline bool operator==(StringObject &other) const {
+        if (objType != other.objType) return false;
+        if (length != other.length) return false;
+        return std::memcmp(chars, other.chars, length) == 0;
+    }
+    inline bool operator==(const char *other) const {
+        if (strlen(other) != length) return false;
+        return std::memcmp(chars, other, length) == 0;
+    }
 };
 
 struct Variable {
@@ -152,80 +161,37 @@ struct Program {
     Variable find_function(const Segment &segment, const std::string &identifier);
 };
 
-struct StackObject {
-    union {
-        uint64_t val64;
-        struct alignas(uint32_t) {
-            VariableType::Type type;
-            uint32_t value;
-        };
-    };
-
-    bool operator==(const StackObject &other) const {
-        return type == other.type && value == other.value;
-    }
-    bool operator==(int32_t other) const {
-        return value == other;
-    }
-};
-
-struct DoubleStackObject {
-    VariableType::Type type;
-    uint64_t value;
-
-    char *asString() const {
-        if (type != VariableType::Object) throw std::runtime_error("Invalid string!");
-        auto obj = reinterpret_cast<Object *>(value);
-        if (obj->objType != Object::Type::String) throw std::runtime_error("Invalid string!");
-        auto str = static_cast<StringObject *>(obj);
-        return str->chars;
-    }
-    bool operator==(const StackObject &other) const {
-        return type == other.type && value == other.value;
-    }
-    bool operator==(int64_t other) const {
-        return value == other;
-    }
-    bool operator==(const char *other) const {
-        if (type != VariableType::Object) return false;
-        auto obj = reinterpret_cast<Object *>(value);
-        if (obj->objType != Object::Type::String) return false;
-        auto str = static_cast<StringObject *>(obj);
-        return str->length == strlen(other) && !strcmp(str->chars, other);
-    }
-};
-
 struct StackFrame {
-    StackObject *locals{};
+    uint32_t *locals{};
     size_t localsSize{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
 
 class VM {
-    StackObject *stack;
+    uint32_t *stack;
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 
 public:
     VM();
     ~VM();
-    void newStackFrame(const Segment &segment, size_t id);
+    void newStackFrame(const Segment &segment);
     void popStackFrame();
-    StackObject getLocal(size_t index);
-    void setLocal(size_t index, StackObject value);
-    StackObject getGlobal(size_t index);
-    void setGlobal(size_t index, StackObject value);
-    DoubleStackObject getDoubleLocal(size_t index);
-    void setDoubleLocal(size_t index, DoubleStackObject value);
-    DoubleStackObject getDoubleGlobal(size_t index);
-    void setDoubleGlobal(size_t index, DoubleStackObject value);
-    void pushStack(StackObject value);
-    void pushDoubleStack(DoubleStackObject value);
-    StackObject popStack();
-    DoubleStackObject popDoubleStack();
-    [[nodiscard]] StackObject topStack() const;
-    [[nodiscard]] DoubleStackObject topDoubleStack() const;
+    [[nodiscard]] uint32_t getLocal(size_t index) const;
+    void setLocal(size_t index, uint32_t value);
+    [[nodiscard]] uint32_t getGlobal(size_t index) const;
+    void setGlobal(size_t index, uint32_t value);
+    [[nodiscard]] uint64_t getDoubleLocal(size_t index) const;
+    void setDoubleLocal(size_t index, uint64_t value);
+    [[nodiscard]] uint64_t getDoubleGlobal(size_t index) const;
+    void setDoubleGlobal(size_t index, uint64_t value);
+    void pushStack(uint32_t value);
+    void pushDoubleStack(uint64_t value);
+    uint32_t popStack();
+    uint64_t popDoubleStack();
+    [[nodiscard]] uint32_t topStack() const;
+    [[nodiscard]] uint64_t topDoubleStack() const;
 
     void run(const Program &program);
     size_t stackSize{};

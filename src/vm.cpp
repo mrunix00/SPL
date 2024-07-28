@@ -45,83 +45,69 @@ void Segment::declare_function(const std::string &name, VariableType *funcType, 
 
 VM::VM() {
     stackCapacity = 1024;
-    stack = (StackObject *) malloc(stackCapacity * sizeof(StackObject));
+    stack = (uint32_t *) malloc(stackCapacity * sizeof(uint32_t));
     if (stack == nullptr)
         throw std::runtime_error("Memory allocation failure!");
     callStack.push_back(StackFrame{});
 }
 VM::~VM() {
-    static_assert(sizeof(StackObject) == sizeof(uint64_t), "StackObject should be 8 bytes in size!");
     free(stack);
     for (auto stackFrame: callStack)
         free(stackFrame.locals);
 }
-inline void VM::newStackFrame(const Segment &segment, size_t id) {
-    StackFrame frame;
-    frame.segmentIndex = id;
-    frame.localsSize = segment.locals_capacity;
-    frame.locals = (StackObject *) malloc(frame.localsSize * sizeof(StackObject));
-    if (frame.locals == nullptr) {
+inline void VM::newStackFrame(const Segment &segment) {
+    auto locals = (uint32_t *) malloc(segment.locals_capacity * sizeof(uint32_t));
+    if (locals == nullptr) {
         throw std::runtime_error("Memory allocation failure!");
     }
-    callStack.push_back(frame);
-    for (size_t i = frame.localsSize - 1; i != -1; i--) {
-        switch (topStack().type) {
-            case VariableType::Type::I64:
-            case VariableType::Type::Object: {
-                auto val = popDoubleStack();
-                setDoubleLocal(--i, val);
-            } break;
-            case VariableType::Type::I32:
-            case VariableType::Type::U32:
-            case VariableType::Type::Bool: {
-                auto val = popStack();
-                setLocal(i, val);
-            } break;
-            case VariableType::Type::Function:
-            case VariableType::Type::Invalid:
-                throw std::runtime_error("Invalid stack operation!");
-        }
+    callStack.push_back({
+            .locals = locals,
+            .localsSize = segment.locals_capacity,
+            .segmentIndex = segment.id,
+            .currentInstruction = 0,
+    });
+    for (size_t i = segment.locals_capacity - 1; i != -1; i--) {
+        setLocal(i, popStack());
     }
 }
 inline void VM::popStackFrame() {
     free(callStack.back().locals);
     callStack.pop_back();
 }
-inline StackObject VM::getLocal(const size_t index) {
+inline uint32_t VM::getLocal(const size_t index) const {
     return callStack.back().locals[index];
 }
-inline void VM::setLocal(const size_t index, StackObject value) {
+inline void VM::setLocal(const size_t index, uint32_t value) {
     callStack.back().locals[index] = value;
 }
-inline StackObject VM::getGlobal(size_t index) {
+inline uint32_t VM::getGlobal(size_t index) const {
     return callStack[0].locals[index];
 }
-inline void VM::setGlobal(const size_t index, StackObject value) {
+inline void VM::setGlobal(const size_t index, uint32_t value) {
     callStack.front().locals[index] = value;
 }
-inline DoubleStackObject VM::getDoubleLocal(const size_t index) {
-    auto value = callStack.back().locals[index].val64;
-    auto type = callStack.back().locals[index + 1].type;
-    return {(VariableType::Type) type, value};
+inline uint64_t VM::getDoubleLocal(const size_t index) const {
+    auto low = getLocal(index + 1);
+    auto high = static_cast<uint64_t>(getLocal(index));
+    return (high << 32) | (low & 0xFFFFFFFF);
 }
-inline void VM::setDoubleLocal(const size_t index, DoubleStackObject value) {
-    callStack.back().locals[index].val64 = value.value;
-    callStack.back().locals[index + 1].type = value.type;
+inline void VM::setDoubleLocal(const size_t index, uint64_t value) {
+    setLocal(index, value >> 32);
+    setLocal(index + 1, value & 0xFFFFFFFF);
 }
-inline DoubleStackObject VM::getDoubleGlobal(size_t index) {
-    auto value = callStack.front().locals[index].val64;
-    auto type = callStack.front().locals[index + 1].type;
-    return {(VariableType::Type) type, value};
+inline uint64_t VM::getDoubleGlobal(size_t index) const {
+    auto low = getGlobal(index);
+    auto high = (uint64_t) getGlobal(index + 1);
+    return high << 32 | (low & 0xFFFFFFFF);
 }
-inline void VM::setDoubleGlobal(const size_t index, DoubleStackObject value) {
-    callStack.front().locals[index].val64 = value.value;
-    callStack.front().locals[index + 1].type = value.type;
+inline void VM::setDoubleGlobal(const size_t index, uint64_t value) {
+    setGlobal(index, value >> 32);
+    setGlobal(index + 1, value & 0xFFFFFFFF);
 }
-inline void VM::pushStack(StackObject value) {
+inline void VM::pushStack(uint32_t value) {
     if (stackSize + 1 > stackCapacity) {
         stackCapacity *= 2;
-        auto newStack = (StackObject *) realloc(stack, stackCapacity * sizeof(uint64_t));
+        auto newStack = (uint32_t *) realloc(stack, stackCapacity * sizeof(uint32_t));
         if (newStack == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         }
@@ -129,39 +115,39 @@ inline void VM::pushStack(StackObject value) {
     }
     stack[stackSize++] = value;
 }
-inline void VM::pushDoubleStack(DoubleStackObject value) {
+inline void VM::pushDoubleStack(uint64_t value) {
     if (stackSize + 2 > stackCapacity) {
         stackCapacity *= 2;
-        auto newStack = realloc(stack, stackCapacity * sizeof(StackObject));
+        auto newStack = realloc(stack, stackCapacity * sizeof(uint32_t));
         if (newStack == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         }
-        stack = (StackObject *) newStack;
+        stack = (uint32_t *) newStack;
     }
-    stack[stackSize++].val64 = value.value;
-    stack[stackSize++].type = value.type;
+    pushStack(value >> 32);
+    pushStack(value & 0xFFFFFFFF);
 }
-inline StackObject VM::popStack() {
+inline uint32_t VM::popStack() {
     return stack[--stackSize];
 }
-inline DoubleStackObject VM::popDoubleStack() {
-    auto type = stack[--stackSize].type;
-    auto value = stack[--stackSize].val64;
-    return {(VariableType::Type) type, value};
+inline uint64_t VM::popDoubleStack() {
+    auto low = popStack();
+    auto high = static_cast<uint64_t>(popStack());
+    return (high << 32) | (low & 0xFFFFFFFF);
 }
-StackObject VM::topStack() const {
+uint32_t VM::topStack() const {
     return stack[stackSize - 1];
 }
-DoubleStackObject VM::topDoubleStack() const{
-    auto type = stack[stackSize - 1].type;
-    auto value = stack[stackSize - 2].val64;
-    return {(VariableType::Type) type, value};
+uint64_t VM::topDoubleStack() const {
+    auto low = stack[stackSize - 1];
+    auto high = static_cast<uint64_t>(stack[stackSize - 2]);
+    return (high << 32) | (low & 0xFFFFFFFF);
 }
 
 void VM::run(const Program &program) {
     if (callStack.front().localsSize != program.segments.front().locals_capacity) {
         callStack.front().localsSize = program.segments.front().locals_capacity;
-        auto *newPtr = (StackObject *) realloc(callStack.front().locals, callStack.front().localsSize * sizeof(StackObject));
+        auto *newPtr = (uint32_t *) realloc(callStack.front().locals, callStack.front().localsSize * sizeof(uint32_t));
         if (newPtr == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         } else {
@@ -180,53 +166,53 @@ void VM::run(const Program &program) {
             case Instruction::InstructionType::AddI32: {
                 auto a = popStack();
                 auto b = popStack();
-                pushStack({.type = VariableType::I32, .value = a.value + b.value});
+                pushStack(a + b);
             } break;
             case Instruction::InstructionType::SubI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::I32, .value = a.value - b.value});
+                pushStack(a - b);
             } break;
             case Instruction::InstructionType::MulI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::I32, .value = a.value * b.value});
+                pushStack(a * b);
             } break;
             case Instruction::InstructionType::DivI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::I32, .value = a.value / b.value});
+                pushStack(a / b);
             } break;
             case Instruction::InstructionType::ModI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::I32, .value = a.value % b.value});
+                pushStack(a % b);
             } break;
             case Instruction::InstructionType::GreaterI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value > b.value});
+                pushStack(a > b);
             } break;
             case Instruction::InstructionType::LessI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value < b.value});
+                pushStack(a < b);
             } break;
             case Instruction::IncrementU32:
             case Instruction::InstructionType::IncrementI32: {
                 auto val = popStack();
-                pushStack({.type = VariableType::I32, .value = val.value + 1});
+                pushStack(val + 1);
             } break;
             case Instruction::DecrementU32:
             case Instruction::InstructionType::DecrementI32: {
                 auto val = popStack();
-                pushStack({.type = VariableType::I32, .value = val.value - 1});
+                pushStack(val - 1);
             } break;
             case Instruction::InstructionType::LoadU32: {
-                pushStack({.type = VariableType::U32, .value = static_cast<uint32_t>(instruction.params.u32)});
+                pushStack(instruction.params.u32);
             } break;
             case Instruction::InstructionType::LoadI32: {
-                pushStack({.type = VariableType::Type::I32, .value = static_cast<uint32_t>(instruction.params.i32)});
+                pushStack(instruction.params.i32);
             } break;
             case Instruction::InstructionType::StoreGlobalI32:
             case Instruction::InstructionType::StoreGlobalU32: {
@@ -251,13 +237,14 @@ void VM::run(const Program &program) {
             case Instruction::InstructionType::Return:
                 popStackFrame();
                 continue;
-            case Instruction::InstructionType::Call:
+            case Instruction::InstructionType::Call: {
                 callStack.back().currentInstruction++;
-                newStackFrame(program.segments[instruction.params.index], instruction.params.index);
+                newStackFrame(program.segments[instruction.params.index]);
                 continue;
+            }
             case Instruction::InstructionType::JumpIfFalse: {
                 auto cond = popStack();
-                if (cond.value == 0) {
+                if (cond == 0) {
                     callStack.back().currentInstruction = instruction.params.index;
                     continue;
                 }
@@ -268,85 +255,85 @@ void VM::run(const Program &program) {
             case Instruction::AddI64: {
                 auto a = popDoubleStack();
                 auto b = popDoubleStack();
-                pushDoubleStack({VariableType::I64, a.value + b.value});
+                pushDoubleStack(a + b);
             } break;
             case Instruction::SubI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushDoubleStack({VariableType::I64, a.value - b.value});
+                pushDoubleStack(a - b);
             } break;
             case Instruction::MulI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushDoubleStack({VariableType::I64, a.value * b.value});
+                pushDoubleStack(a * b);
             } break;
             case Instruction::DivI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushDoubleStack({VariableType::I64, a.value / b.value});
+                pushDoubleStack(a / b);
             } break;
             case Instruction::ModI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushDoubleStack({VariableType::I64, a.value % b.value});
+                pushDoubleStack(a % b);
             } break;
             case Instruction::GreaterI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value > b.value});
+                pushStack(a > b);
             } break;
             case Instruction::LessI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value < b.value});
+                pushStack(a < b);
             } break;
             case Instruction::GreaterEqualI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value >= b.value});
+                pushStack(a >= b);
             } break;
             case Instruction::GreaterEqualI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value >= b.value});
+                pushStack(a >= b);
             } break;
             case Instruction::LessEqualI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value <= b.value});
+                pushStack(a <= b);
             } break;
             case Instruction::LessEqualI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value <= b.value});
+                pushStack(a <= b);
             } break;
             case Instruction::EqualI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value == b.value});
+                pushStack(a == b);
             } break;
             case Instruction::EqualI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value == b.value});
+                pushStack(a == b);
             } break;
             case Instruction::NotEqualI32: {
                 auto b = popStack();
                 auto a = popStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value != b.value});
+                pushStack(a != b);
             } break;
             case Instruction::NotEqualI64: {
                 auto b = popDoubleStack();
                 auto a = popDoubleStack();
-                pushStack({.type = VariableType::Type::Bool, .value = a.value != b.value});
+                pushStack(a != b);
             } break;
             case Instruction::IncrementI64: {
                 auto val = popDoubleStack();
-                pushDoubleStack({VariableType::I64, val.value + 1});
+                pushDoubleStack(val + 1);
             } break;
             case Instruction::DecrementI64: {
                 auto val = popDoubleStack();
-                pushDoubleStack({VariableType::I64, val.value - 1});
+                pushDoubleStack(val - 1);
             } break;
             case Instruction::StoreGlobalObject:
             case Instruction::StoreGlobalI64: {
@@ -359,7 +346,7 @@ void VM::run(const Program &program) {
                 setDoubleLocal(instruction.params.index, val);
             } break;
             case Instruction::LoadI64: {
-                pushDoubleStack({VariableType::I64, static_cast<uint64_t>(instruction.params.i64)});
+                pushDoubleStack(instruction.params.i64);
             } break;
             case Instruction::LoadGlobalObject:
             case Instruction::LoadGlobalI64: {
@@ -374,10 +361,10 @@ void VM::run(const Program &program) {
             case Instruction::ConvertI32toI64:
             case Instruction::ConvertU32toI64: {
                 auto val = popStack();
-                pushDoubleStack({VariableType::I64, val.value});
+                pushDoubleStack(val);
             } break;
             case Instruction::LoadObject: {
-                pushDoubleStack({VariableType::Object, reinterpret_cast<uint64_t>(instruction.params.ptr)});
+                pushDoubleStack(std::bit_cast<uint64_t>(instruction.params.ptr));
             } break;
         }
         callStack.back().currentInstruction++;

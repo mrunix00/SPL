@@ -10,22 +10,21 @@ void printTopStack(const VM &vm, const Program &program) {
     auto type = getInstructionType(program, last_instruction);
     switch (type) {
         case VariableType::Bool:
-            std::cout << (vm.topStack().value == 0 ? "false" : "true") << std::endl;
+            std::cout << (vm.topStack() == 0 ? "false" : "true") << std::endl;
             break;
         case VariableType::I32:
-            std::cout << (int32_t) vm.topStack().value << std::endl;
+            std::cout << (int32_t) vm.topStack() << std::endl;
             break;
         case VariableType::I64: {
-            std::cout << vm.topDoubleStack().value << std::endl;
+            std::cout << vm.topDoubleStack() << std::endl;
         } break;
         case VariableType::U32:
-            std::cout << (uint32_t) vm.topStack().value << std::endl;
+            std::cout << (uint32_t) vm.topStack() << std::endl;
             break;
         case VariableType::Object: {
-            auto stackObj = vm.topDoubleStack();
-            auto obj = reinterpret_cast<Object *>(vm.topDoubleStack().value);
+            auto obj = std::bit_cast<Object *>(vm.topDoubleStack());
             if (obj->objType == Object::Type::String) {
-                std::cout << stackObj.asString() << std::endl;
+                std::cout << static_cast<StringObject *>(obj)->chars << std::endl;
             }
         }
         default:

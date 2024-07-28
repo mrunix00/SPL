@@ -32,8 +32,8 @@ void Node::compile(Program &program, Segment &segment) const {
         case True:
             return segment.instructions.push_back(
                     Instruction{
-                            .type = Instruction::InstructionType::LoadI32,
-                            .params = {.i32 = token.value == "true"},
+                            .type = Instruction::InstructionType::LoadI64,
+                            .params = {.i64 = token.value == "true"},
                     });
         default:
             throw std::runtime_error("[Node::compile] This should not be accessed!");
@@ -151,8 +151,26 @@ void Declaration::compile(Program &program, Segment &segment) const {
                     emitStore(program, segment, identifier.token.value);
                 } break;
                 case Bool:
-                    DECLARE_VAR_CASE(I32, i32, int32_t)
-                    DECLARE_VAR_CASE(I64, i64, int64_t)
+                case Int: {
+                    if (!value.has_value()) {
+                        segment.instructions.push_back({
+                                .type = Instruction::InstructionType::LoadI64,
+                                .params = {.i64 = 0},
+                        });
+                    } else if (((Node *) value.value())->token.type == Number) {
+                        segment.instructions.push_back({
+                                .type = Instruction::InstructionType::LoadI64,
+                                .params = {.i64 = convert<int64_t>(((Node *) value.value())->token.value)},
+                        });
+                    } else {
+                        ((Node *) value.value())->compile(program, segment);
+                    }
+                    segment.declare_variable(identifier.token.value, new VariableType(VariableType::Type::I64));
+                    segment.instructions.push_back({
+                            .type = segment.id == 0 ? Instruction::InstructionType::StoreGlobalI64 : Instruction::InstructionType::StoreLocalI64,
+                            .params = {.index = segment.find_local(identifier.token.value)},
+                    });
+                } break;
                 default:
                     throw std::runtime_error("[Declaration::compile] Unimplemented type handler!");
             }
@@ -393,7 +411,6 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
     switch (op.type) {
         case Increment:
             switch (varType->type) {
-                VAR_CASE(Increment, I32)
                 VAR_CASE(Increment, I64)
                 default:
                     throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");
@@ -401,7 +418,6 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
             break;
         case Decrement:
             switch (varType->type) {
-                VAR_CASE(Decrement, I32)
                 VAR_CASE(Decrement, I64)
                 default:
                     throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");

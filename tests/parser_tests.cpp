@@ -92,10 +92,10 @@ TEST(ParserTests, OperationsPriority) {
 }
 
 TEST(ParserTests, Declaration) {
-    const char *input = "define a : u32;";
+    const char *input = "define a : uint;";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
             new Declaration(
-                    new Node({U32, "u32"}),
+                    new Node({UInt, "uint"}),
                     Node({Identifier, "a"})),
     };
     auto actualResult = parse(input);
@@ -106,10 +106,10 @@ TEST(ParserTests, Declaration) {
 }
 
 TEST(ParserTests, DeclarationWithInitialization) {
-    const char *input = "define a : u32 = 42;";
+    const char *input = "define a : uint = 42;";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
             new Declaration(
-                    new Node({U32, "u32"}),
+                    new Node({UInt, "uint"}),
                     Node({Identifier, "a"}),
                     new Node({Number, "42"})),
     };
@@ -150,16 +150,16 @@ TEST(ParserTests, VariableAssignment) {
 }
 
 TEST(ParserTests, FunctionDeclaration) {
-    const char *input = "define max : function(x: i32, y: i32) -> i32;";
+    const char *input = "define max : function(x: int, y: int) -> int;";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
             new Declaration(
                     new FunctionDeclaration(
-                            new Node({I32, "i32"}),
+                            new Node({Int, "int"}),
                             {new Declaration(
-                                     new Node({I32, "i32"}),
+                                     new Node({Int, "int"}),
                                      Node({Identifier, "x"})),
                              new Declaration(
-                                     new Node({I32, "i32"}),
+                                     new Node({Int, "int"}),
                                      Node({Identifier, "y"}))}),
                     Node({Identifier, "max"})),
     };
@@ -171,19 +171,19 @@ TEST(ParserTests, FunctionDeclaration) {
 }
 
 TEST(ParserTests, FunctionDeclarationWithBody) {
-    const char *input = "define max : function(x: i32, y: i32) -> i32 = {\n"
+    const char *input = "define max : function(x: int, y: int) -> int = {\n"
                         "\treturn x + y;\n"
                         "};";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
             new Declaration(
                     new FunctionDeclaration(
-                            new Node({I32, "i32"}),
+                            new Node({Int, "int"}),
                             {
                                     new Declaration(
-                                            new Node({I32, "i32"}),
+                                            new Node({Int, "int"}),
                                             Node({Identifier, "x"})),
                                     new Declaration(
-                                            new Node({I32, "i32"}),
+                                            new Node({Int, "int"}),
                                             Node({Identifier, "y"})),
                             }),
                     Node({Identifier, "max"}),
@@ -202,26 +202,26 @@ TEST(ParserTests, FunctionDeclarationWithBody) {
 }
 
 TEST(ParserTests, FunctionDeclarationWithBodyWithMultipleExpressions) {
-    const char *input = "define max : function(x: i32, y: i32) -> i32 = {\n"
-                        "\tdefine result : i32 = x + y;\n"
+    const char *input = "define max : function(x: int, y: int) -> int = {\n"
+                        "\tdefine result : int = x + y;\n"
                         "\treturn result;\n"
                         "};";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
             new Declaration(
                     new FunctionDeclaration(
-                            new Node({I32, "i32"}),
+                            new Node({Int, "int"}),
                             {
                                     new Declaration(
-                                            new Node({I32, "i32"}),
+                                            new Node({Int, "int"}),
                                             Node({Identifier, "x"})),
                                     new Declaration(
-                                            new Node({I32, "i32"}),
+                                            new Node({Int, "int"}),
                                             Node({Identifier, "y"})),
                             }),
                     Node({Identifier, "max"}),
                     new ScopedBody({
                             new Declaration(
-                                    new Node({I32, "i32"}),
+                                    new Node({Int, "int"}),
                                     Node({Identifier, "result"}),
                                     new BinaryExpression(
                                             new Node({Identifier, "x"}),
@@ -238,7 +238,7 @@ TEST(ParserTests, FunctionDeclarationWithBodyWithMultipleExpressions) {
 }
 
 TEST(ParserTests, FunctionDeclarationWithAutoTypeDeduction) {
-    const char *input = "define max = (function (x: i32, y: i32) -> i32) {\n"
+    const char *input = "define max = (function (x: int, y: int) -> int) {\n"
                         "\treturn x + y;\n"
                         "};";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
@@ -252,13 +252,13 @@ TEST(ParserTests, FunctionDeclarationWithAutoTypeDeduction) {
                                             {Plus, "+"})),
                             }),
                             new FunctionDeclaration(
-                                    new Node({I32, "i32"}),
+                                    new Node({Int, "int"}),
                                     {
                                             new Declaration(
-                                                    new Node({I32, "i32"}),
+                                                    new Node({Int, "int"}),
                                                     Node({Identifier, "x"})),
                                             new Declaration(
-                                                    new Node({I32, "i32"}),
+                                                    new Node({Int, "int"}),
                                                     Node({Identifier, "y"})),
                                     }))),
     };

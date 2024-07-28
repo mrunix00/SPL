@@ -50,7 +50,7 @@ TEST(VM, CompoundExpression) {
 }
 
 TEST(VM, SimpleVariableDeclaration) {
-    const char *input = "define a : i32 = 42;"
+    const char *input = "define a : int = 42;"
                         "a;";
     VM vm;
     auto program = compile(input);
@@ -59,7 +59,7 @@ TEST(VM, SimpleVariableDeclaration) {
 }
 
 TEST(VM, VariablesShouldBeInitializedWithZero) {
-    const char *input = "define a : i32;"
+    const char *input = "define a : int;"
                         "a;";
     VM vm;
     auto program = compile(input);
@@ -86,27 +86,8 @@ TEST(VM, DeclareBooleans) {
     ASSERT_EQ(vm.topStack(), 0);
 }
 
-TEST(VM, SimpleI64VariableDeclaration) {
-    const char *input = "define a : i64 = 42;"
-                        "a;";
-    VM vm;
-    auto program = compile(input);
-    vm.run(program);
-    ASSERT_EQ(vm.topStack(), static_cast<int64_t>(42));
-}
-
-TEST(VM, BinaryExpressionWithMultipleTypes) {
-    const char *input = "define a : i64 = 42;"
-                        "define b : i32 = 42;"
-                        "a + b;";
-    VM vm;
-    auto program = compile(input);
-    vm.run(program);
-    ASSERT_EQ(vm.topStack(), 84);
-}
-
 TEST(VM, SimpleVariableAssignment) {
-    const char *input = "define a : i32 = 42; a = 43; a;";
+    const char *input = "define a : int = 42; a = 43; a;";
     VM vm;
     auto program = compile(input);
     vm.run(program);
@@ -114,17 +95,7 @@ TEST(VM, SimpleVariableAssignment) {
 }
 
 TEST(VM, RightIncrementUnaryOperator) {
-    const char *input = "define a : i32 = 42;"
-                        "a++;"
-                        "a;";
-    VM vm;
-    auto program = compile(input);
-    vm.run(program);
-    ASSERT_EQ(vm.topStack(), 43);
-}
-
-TEST(VM, RightIncrementUnaryOperatorI64) {
-    const char *input = "define a : i64 = 42;"
+    const char *input = "define a : int = 42;"
                         "a++;"
                         "a;";
     VM vm;
@@ -134,17 +105,7 @@ TEST(VM, RightIncrementUnaryOperatorI64) {
 }
 
 TEST(VM, RightDecrementUnaryOperator) {
-    const char *input = "define a : i32 = 42;"
-                        "a--;"
-                        "a;";
-    VM vm;
-    auto program = compile(input);
-    vm.run(program);
-    ASSERT_EQ(vm.topStack(), 41);
-}
-
-TEST(VM, RightDecrementUnaryOperatorI64) {
-    const char *input = "define a : i64 = 42;"
+    const char *input = "define a : int = 42;"
                         "a--;"
                         "a;";
     VM vm;
@@ -154,7 +115,7 @@ TEST(VM, RightDecrementUnaryOperatorI64) {
 }
 
 TEST(VM, LeftIncrementUnaryOperator) {
-    const char *input = "define a : i32 = 42;"
+    const char *input = "define a : int = 42;"
                         "++a;"
                         "a;";
     VM vm;
@@ -164,7 +125,7 @@ TEST(VM, LeftIncrementUnaryOperator) {
 }
 
 TEST(VM, LeftDecrementUnaryOperator) {
-    const char *input = "define a : i32 = 42;"
+    const char *input = "define a : int = 42;"
                         "--a;"
                         "a;";
     VM vm;
@@ -174,7 +135,7 @@ TEST(VM, LeftDecrementUnaryOperator) {
 }
 
 TEST(VM, SimpleIfCondition) {
-    const char *input = "define a : i32 = 69;"
+    const char *input = "define a : int = 69;"
                         "if 10 > 0 { a = 42; };"
                         "a;";
     VM vm;
@@ -184,7 +145,7 @@ TEST(VM, SimpleIfCondition) {
 }
 
 TEST(VM, SimpleIfElseCondition) {
-    const char *input = "define a : i32 = 69;"
+    const char *input = "define a : int = 69;"
                         "if 10 < 0 { a = 42; } else { a = 43; };"
                         "a;";
     VM vm;
@@ -194,7 +155,7 @@ TEST(VM, SimpleIfElseCondition) {
 }
 
 TEST(VM, SimpleFunctionDeclaration) {
-    const char *input = "define add : function(x: i32, y: i32) -> i32 = { return x + y; };"
+    const char *input = "define add : function(x: int, y: int) -> int = { return x + y; };"
                         "add(1, 2);";
     VM vm;
     auto program = compile(input);
@@ -202,17 +163,8 @@ TEST(VM, SimpleFunctionDeclaration) {
     ASSERT_EQ(vm.topStack(), 3);
 }
 
-TEST(VM, FunctionWithDifferentReturnType) {
-    const char *input = "define add : function(x: i32, y: i32) -> i64 = { return x + y; };"
-                        "add(20, 10);";
-    VM vm;
-    auto program = compile(input);
-    vm.run(program);
-    ASSERT_EQ(vm.topStack(), 30);
-}
-
 TEST(VM, RecursiveFunction) {
-    const char *input = "define fib : function(n: i32) -> i32 = { if n < 2 { return n; } else { return fib(n - 1) + fib(n - 2); }; };"
+    const char *input = "define fib : function(n: int) -> int = { if n < 2 { return n; } else { return fib(n - 1) + fib(n - 2); }; };"
                         "fib(10);";
     VM vm;
     auto program = compile(input);
@@ -221,7 +173,7 @@ TEST(VM, RecursiveFunction) {
 }
 
 TEST(VM, SimpleWhileLoop) {
-    const char *input = "define a : i32 = 0;"
+    const char *input = "define a : int = 0;"
                         "while a < 10 { a = a + 1; };"
                         "a;";
     VM vm;
@@ -231,7 +183,7 @@ TEST(VM, SimpleWhileLoop) {
 }
 
 TEST(VM, SimpleForLoop) {
-    const char *input = "define sum : i32 = 0;"
+    const char *input = "define sum : int = 0;"
                         "for define i = 0; i < 10; i++ {"
                         "sum = sum + i;"
                         "};"

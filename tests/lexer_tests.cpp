@@ -110,8 +110,7 @@ TEST(Lexer, Symbols) {
 TEST(Lexer, Keywords) {
     auto actual = lex(
             "define if else while for return "
-            "u8 u16 u32 u64 i8 i16 i32 i64 str "
-            "f32 f64 bool true false");
+            "int uint str f64 bool true false");
 
     std::vector<Token> expected = {
             {Define, "define"},
@@ -120,16 +119,9 @@ TEST(Lexer, Keywords) {
             {While, "while"},
             {For, "for"},
             {Return, "return"},
-            {U8, "u8"},
-            {U16, "u16"},
-            {U32, "u32"},
-            {U64, "u64"},
-            {I8, "i8"},
-            {I16, "i16"},
-            {I32, "i32"},
-            {I64, "i64"},
+            {Int, "int"},
+            {UInt, "uint"},
             {Str, "str"},
-            {F32, "f32"},
             {F64, "f64"},
             {Bool, "bool"},
             {True, "true"},

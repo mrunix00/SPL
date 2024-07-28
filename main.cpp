@@ -12,11 +12,8 @@ void printTopStack(const VM &vm, const Program &program) {
         case VariableType::Bool:
             std::cout << (vm.topStack() == 0 ? "false" : "true") << std::endl;
             break;
-        case VariableType::I32:
-            std::cout << (int32_t) vm.topStack() << std::endl;
-            break;
         case VariableType::I64: {
-            std::cout << vm.topStack() << std::endl;
+            std::cout << (int64_t) vm.topStack() << std::endl;
         } break;
         case VariableType::Object: {
             auto obj = std::bit_cast<Object *>(vm.topStack());

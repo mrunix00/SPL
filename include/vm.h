@@ -12,48 +12,29 @@
 struct Instruction {
     enum InstructionType : uint8_t {
         Invalid = 0,
-        AddI32,
         AddI64,
-        SubI32,
         SubI64,
-        MulI32,
         MulI64,
-        DivI32,
         DivI64,
-        ModI32,
         ModI64,
-        GreaterI32,
         GreaterI64,
-        LessI32,
         LessI64,
-        GreaterEqualI32,
         GreaterEqualI64,
-        LessEqualI32,
         LessEqualI64,
-        EqualI32,
         EqualI64,
-        NotEqualI32,
         NotEqualI64,
-        IncrementI32,
         IncrementI64,
-        DecrementI32,
         DecrementI64,
-        StoreGlobalI32,
         StoreGlobalI64,
         StoreGlobalObject,
-        StoreLocalI32,
         StoreLocalI64,
         StoreLocalObject,
-        LoadI32,
         LoadI64,
         LoadObject,
-        LoadGlobalI32,
         LoadGlobalI64,
         LoadGlobalObject,
-        LoadLocalI32,
         LoadLocalI64,
         LoadLocalObject,
-        ConvertI32toI64,
         Return,
         Call,
         JumpIfFalse,
@@ -62,16 +43,7 @@ struct Instruction {
     union {
         void *ptr;
         size_t index;
-        int32_t i32;
         int64_t i64;
-        struct {
-            size_t index;
-            int32_t i32;
-        } ri32;
-        struct {
-            size_t index;
-            int64_t i64;
-        } ri64;
     } params{};
 };
 
@@ -79,7 +51,6 @@ struct VariableType {
     enum Type : uint32_t {
         Invalid = 0,
         Bool,
-        I32,
         I64,
         Object,
         Function

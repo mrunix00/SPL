@@ -1,4 +1,5 @@
 #include "vm.h"
+#include "utils.h"
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -121,68 +122,6 @@ void VM::run(const Program &program) {
         switch (instruction.type) {
             case Instruction::InstructionType::Invalid:
                 throw std::runtime_error("[VM::run] Invalid instruction!");
-            case Instruction::InstructionType::AddI32: {
-                auto a = popStack();
-                auto b = popStack();
-                pushStack(a + b);
-            } break;
-            case Instruction::InstructionType::SubI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a - b);
-            } break;
-            case Instruction::InstructionType::MulI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a * b);
-            } break;
-            case Instruction::InstructionType::DivI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a / b);
-            } break;
-            case Instruction::InstructionType::ModI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a % b);
-            } break;
-            case Instruction::InstructionType::GreaterI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a > b);
-            } break;
-            case Instruction::InstructionType::LessI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a < b);
-            } break;
-            case Instruction::InstructionType::IncrementI32: {
-                auto val = popStack();
-                pushStack(val + 1);
-            } break;
-            case Instruction::InstructionType::DecrementI32: {
-                auto val = popStack();
-                pushStack(val - 1);
-            } break;
-            case Instruction::InstructionType::LoadI32: {
-                pushStack(instruction.params.i32);
-            } break;
-            case Instruction::InstructionType::StoreGlobalI32: {
-                auto val = popStack();
-                setGlobal(instruction.params.index, val);
-            } break;
-            case Instruction::InstructionType::LoadGlobalI32: {
-                auto val = getGlobal(instruction.params.index);
-                pushStack(val);
-            } break;
-            case Instruction::InstructionType::StoreLocalI32: {
-                auto val = popStack();
-                setLocal(instruction.params.index, val);
-            } break;
-            case Instruction::InstructionType::LoadLocalI32: {
-                auto val = getLocal(instruction.params.index);
-                pushStack(val);
-            } break;
             case Instruction::InstructionType::Return:
                 popStackFrame();
                 continue;
@@ -236,40 +175,20 @@ void VM::run(const Program &program) {
                 auto a = popStack();
                 pushStack(a < b);
             } break;
-            case Instruction::GreaterEqualI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a >= b);
-            } break;
             case Instruction::GreaterEqualI64: {
                 auto b = popStack();
                 auto a = popStack();
                 pushStack(a >= b);
-            } break;
-            case Instruction::LessEqualI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a <= b);
             } break;
             case Instruction::LessEqualI64: {
                 auto b = popStack();
                 auto a = popStack();
                 pushStack(a <= b);
             } break;
-            case Instruction::EqualI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a == b);
-            } break;
             case Instruction::EqualI64: {
                 auto b = popStack();
                 auto a = popStack();
                 pushStack(a == b);
-            } break;
-            case Instruction::NotEqualI32: {
-                auto b = popStack();
-                auto a = popStack();
-                pushStack(a != b);
             } break;
             case Instruction::NotEqualI64: {
                 auto b = popStack();
@@ -305,10 +224,6 @@ void VM::run(const Program &program) {
             case Instruction::LoadLocalObject:
             case Instruction::LoadLocalI64: {
                 auto val = getLocal(instruction.params.index);
-                pushStack(val);
-            } break;
-            case Instruction::ConvertI32toI64: {
-                auto val = popStack();
                 pushStack(val);
             } break;
             case Instruction::LoadObject: {

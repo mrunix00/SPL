@@ -24,7 +24,7 @@
 %token Increment Decrement IncrementAssign DecrementAssign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define Function If Else While For Return
-%token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool True False Str
+%token Int UInt F64 Bool True False Str
 %token Colon Comma Semicolon Arrow Newline
 %token LParen RParen LBrace RBrace LBracket RBracket
 
@@ -67,19 +67,10 @@ ForLoop:
 ;
 
 VarType:
-    U8  { $$ = new Node({U8, "u8"}); }
-    | U16 { $$ = new Node({U16, "u16"}); }
-    | U32 { $$ = new Node({U32, "u32"}); }
-    | U64 { $$ = new Node({U64, "u64"}); }
-    | I8  { $$ = new Node({I8, "i8"}); }
-    | I16 { $$ = new Node({I16, "i16"}); }
-    | I32 { $$ = new Node({I32, "i32"}); }
-    | I64 { $$ = new Node({I64, "i64"}); }
-    | F32 { $$ = new Node({F32, "f32"}); }
+    Int  { $$ = new Node({Int, "int"}); }
+    | UInt { $$ = new Node({UInt, "uint"}); }
     | F64 { $$ = new Node({F64, "f64"}); }
     | Bool { $$ = new Node({Bool, "bool"}); }
-    | True { $$ = new Node({True, "true"}); }
-    | False { $$ = new Node({False, "false"}); }
     | Str { $$ = new Node({Str, "str"}); }
 ;
 
@@ -170,6 +161,8 @@ UnaryExpression:
 
 Expression:
     Identifier { $$ = new Node({Identifier, $1}); }
+    | False { $$ = new Node({False, "false"}); }
+    | True { $$ = new Node({True, "true"}); }
     | Number { $$ = new Node({Number, $1}); }
     | String { $$ = new Node({String, $1}); }
     | FunctionDeclaration { $$ = $1; }

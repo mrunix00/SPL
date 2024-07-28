@@ -28,12 +28,12 @@ make -j`nproc`
 ## Syntax
 ### Variable declaration
 ```c
-define x : i32 = 42;
+define x : int = 42;
 define y = 42;
 ```
 ### Function declaration
 ```c
-define add : function(x : i32, y : i32) -> i32 = {
+define add : function(x : int, y : int) -> int = {
     return x + y;
 };
 ```

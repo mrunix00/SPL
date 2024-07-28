@@ -50,15 +50,8 @@
 "while"                     { return While; }
 "for"                       { return For; }
 "return"                    { return Return; }
-"u8"                        { return U8; }
-"u16"                       { return U16; }
-"u32"                       { return U32; }
-"u64"                       { return U64; }
-"i8"                        { return I8; }
-"i16"                       { return I16; }
-"i32"                       { return I32; }
-"i64"                       { return I64; }
-"f32"                       { return F32; }
+"uint"                      { return UInt; }
+"int"                       { return Int; }
 "f64"                       { return F64; }
 "bool"                      { return Bool; }
 "str"                       { return Str; }

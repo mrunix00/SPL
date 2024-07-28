@@ -27,12 +27,6 @@
                                            : Instruction::InstructionType::OPERATION##GlobalObject;         \
                 instruction.params.index = id;                                                              \
                 break;                                                                                      \
-            case VariableType::Type::Bool:                                                                  \
-            case VariableType::Type::I32:                                                                   \
-                instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalI32              \
-                                           : Instruction::InstructionType::OPERATION##GlobalI32;            \
-                instruction.params.index = id;                                                              \
-                break;                                                                                      \
             case VariableType::Type::I64:                                                                   \
                 instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalI64              \
                                            : Instruction::InstructionType::OPERATION##GlobalI64;            \
@@ -54,30 +48,6 @@ template<>
 inline uint32_t convert<uint32_t>(const std::string &value) {
     return static_cast<uint32_t>(std::stoull(value));
 }
-
-#define DECLARE_VAR_CASE(TYPE, PARAM, CONVERT_TYPE)                                                    \
-    case TYPE: {                                                                                       \
-        if (!value.has_value()) {                                                                      \
-            segment.instructions.push_back({                                                           \
-                    .type = Instruction::InstructionType::Load##TYPE,                                  \
-                    .params = {.PARAM = 0},                                                            \
-            });                                                                                        \
-        } else if (((Node *) value.value())->token.type == Number) {                                   \
-            segment.instructions.push_back({                                                           \
-                    .type = Instruction::InstructionType::Load##TYPE,                                  \
-                    .params = {.PARAM = convert<CONVERT_TYPE>(((Node *) value.value())->token.value)}, \
-            });                                                                                        \
-        } else {                                                                                       \
-            ((Node *) value.value())->compile(program, segment);                                       \
-        }                                                                                              \
-        segment.declare_variable(identifier.token.value, new VariableType(VariableType::Type::TYPE));  \
-        segment.instructions.push_back({                                                               \
-                .type = segment.id == 0                                                                \
-                                ? Instruction::InstructionType::StoreGlobal##TYPE                      \
-                                : Instruction::InstructionType::StoreLocal##TYPE,                      \
-                .params = {.index = segment.find_local(identifier.token.value)},                       \
-        });                                                                                            \
-    } break;
 
 #define VAR_CASE(OP, TYPE)                                                                           \
     case VariableType::Type::TYPE:                                                                   \

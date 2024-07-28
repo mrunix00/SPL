@@ -193,18 +193,25 @@ size_t sizeOfType(VariableType::Type type) {
 
 VariableType::Type getInstructionType(const Program &program, const Instruction &instruction) {
     switch (instruction.type) {
-        case Instruction::InstructionType::LoadI32:
-        case Instruction::InstructionType::AddI32:
-        case Instruction::InstructionType::SubI32:
-        case Instruction::InstructionType::MulI32:
-        case Instruction::InstructionType::DivI32:
-        case Instruction::InstructionType::ModI32:
         case Instruction::InstructionType::EqualI32:
         case Instruction::InstructionType::LessI32:
         case Instruction::InstructionType::GreaterI32:
         case Instruction::InstructionType::GreaterEqualI32:
         case Instruction::InstructionType::LessEqualI32:
         case Instruction::InstructionType::NotEqualI32:
+        case Instruction::InstructionType::EqualI64:
+        case Instruction::InstructionType::LessI64:
+        case Instruction::InstructionType::GreaterI64:
+        case Instruction::InstructionType::GreaterEqualI64:
+        case Instruction::InstructionType::LessEqualI64:
+        case Instruction::InstructionType::NotEqualI64:
+            return VariableType::Bool;
+        case Instruction::InstructionType::LoadI32:
+        case Instruction::InstructionType::AddI32:
+        case Instruction::InstructionType::SubI32:
+        case Instruction::InstructionType::MulI32:
+        case Instruction::InstructionType::DivI32:
+        case Instruction::InstructionType::ModI32:
         case Instruction::InstructionType::IncrementI32:
         case Instruction::InstructionType::DecrementI32:
         case Instruction::InstructionType::StoreLocalI32:
@@ -218,12 +225,6 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
         case Instruction::InstructionType::MulI64:
         case Instruction::InstructionType::DivI64:
         case Instruction::InstructionType::ModI64:
-        case Instruction::InstructionType::EqualI64:
-        case Instruction::InstructionType::LessI64:
-        case Instruction::InstructionType::GreaterI64:
-        case Instruction::InstructionType::GreaterEqualI64:
-        case Instruction::InstructionType::LessEqualI64:
-        case Instruction::InstructionType::NotEqualI64:
         case Instruction::InstructionType::IncrementI64:
         case Instruction::InstructionType::DecrementI64:
         case Instruction::InstructionType::StoreLocalI64:

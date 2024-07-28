@@ -108,3 +108,15 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
 size_t sizeOfType(VariableType::Type type);
 VariableType::Type biggestType(VariableType::Type first, VariableType::Type second);
 VariableType::Type getInstructionType(const Program &program, const Instruction &instruction);
+
+#ifndef __cpp_lib_bit_cast
+namespace std {
+    template<typename To, typename From>
+    To bit_cast(const From &from) {
+        static_assert(sizeof(To) == sizeof(From));
+        To to;
+        std::memcpy(&to, &from, sizeof(To));
+        return to;
+    }
+}
+#endif

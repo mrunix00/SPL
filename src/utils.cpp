@@ -227,3 +227,72 @@ size_t sizeOfType(VariableType::Type type) {
             throw std::runtime_error("Invalid type");
     }
 }
+
+VariableType::Type getInstructionType(const Program &program, const Instruction &instruction) {
+    switch (instruction.type) {
+        case Instruction::InstructionType::LoadI32:
+        case Instruction::InstructionType::AddI32:
+        case Instruction::InstructionType::SubI32:
+        case Instruction::InstructionType::MulI32:
+        case Instruction::InstructionType::DivI32:
+        case Instruction::InstructionType::ModI32:
+        case Instruction::InstructionType::EqualI32:
+        case Instruction::InstructionType::LessI32:
+        case Instruction::InstructionType::GreaterI32:
+        case Instruction::InstructionType::GreaterEqualI32:
+        case Instruction::InstructionType::LessEqualI32:
+        case Instruction::InstructionType::NotEqualI32:
+        case Instruction::InstructionType::IncrementI32:
+        case Instruction::InstructionType::DecrementI32:
+        case Instruction::InstructionType::StoreLocalI32:
+        case Instruction::InstructionType::LoadLocalI32:
+        case Instruction::InstructionType::StoreGlobalI32:
+        case Instruction::InstructionType::LoadGlobalI32:
+            return VariableType::I32;
+        case Instruction::InstructionType::LoadU32:
+        case Instruction::InstructionType::StoreLocalU32:
+        case Instruction::InstructionType::LoadLocalU32:
+        case Instruction::InstructionType::StoreGlobalU32:
+        case Instruction::InstructionType::LoadGlobalU32:
+        case Instruction::InstructionType::IncrementU32:
+        case Instruction::InstructionType::DecrementU32:
+            return VariableType::U32;
+        case Instruction::InstructionType::LoadI64:
+        case Instruction::InstructionType::AddI64:
+        case Instruction::InstructionType::SubI64:
+        case Instruction::InstructionType::MulI64:
+        case Instruction::InstructionType::DivI64:
+        case Instruction::InstructionType::ModI64:
+        case Instruction::InstructionType::EqualI64:
+        case Instruction::InstructionType::LessI64:
+        case Instruction::InstructionType::GreaterI64:
+        case Instruction::InstructionType::GreaterEqualI64:
+        case Instruction::InstructionType::LessEqualI64:
+        case Instruction::InstructionType::NotEqualI64:
+        case Instruction::InstructionType::IncrementI64:
+        case Instruction::InstructionType::DecrementI64:
+        case Instruction::InstructionType::StoreLocalI64:
+        case Instruction::InstructionType::LoadLocalI64:
+        case Instruction::InstructionType::StoreGlobalI64:
+        case Instruction::InstructionType::LoadGlobalI64:
+        case Instruction::InstructionType::ConvertI32toI64:
+        case Instruction::InstructionType::ConvertU32toI64:
+            return VariableType::I64;
+        case Instruction::InstructionType::LoadObject:
+        case Instruction::InstructionType::StoreLocalObject:
+        case Instruction::InstructionType::LoadLocalObject:
+        case Instruction::InstructionType::StoreGlobalObject:
+        case Instruction::InstructionType::LoadGlobalObject:
+            return VariableType::Object;
+        case Instruction::InstructionType::Call: {
+            auto func_index = instruction.params.index;
+            auto function = program.segments[func_index];
+            return function.returnType->type;
+        }
+        case Instruction::InstructionType::Jump:
+        case Instruction::InstructionType::JumpIfFalse:
+        case Instruction::InstructionType::Return:
+        case Instruction::InstructionType::Invalid:
+            return VariableType::Invalid;
+    }
+}

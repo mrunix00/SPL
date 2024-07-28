@@ -224,8 +224,8 @@ public:
     void pushDoubleStack(DoubleStackObject value);
     StackObject popStack();
     DoubleStackObject popDoubleStack();
-    StackObject topStack();
-    [[maybe_unused]] [[maybe_unused]] DoubleStackObject topDoubleStack();
+    [[nodiscard]] StackObject topStack() const;
+    [[nodiscard]] DoubleStackObject topDoubleStack() const;
 
     void run(const Program &program);
     size_t stackSize{};

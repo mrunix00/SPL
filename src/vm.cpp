@@ -149,10 +149,10 @@ inline DoubleStackObject VM::popDoubleStack() {
     auto value = stack[--stackSize].val64;
     return {(VariableType::Type) type, value};
 }
-StackObject VM::topStack() {
+StackObject VM::topStack() const {
     return stack[stackSize - 1];
 }
-[[maybe_unused]] DoubleStackObject VM::topDoubleStack() {
+DoubleStackObject VM::topDoubleStack() const{
     auto type = stack[stackSize - 1].type;
     auto value = stack[stackSize - 2].val64;
     return {(VariableType::Type) type, value};

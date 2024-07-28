@@ -1,28 +1,29 @@
 #include "ast.h"
 #include "linenoise.h"
+#include "utils.h"
 #include <fstream>
 #include <iostream>
 
-void printTopStack(VM &vm) {
+void printTopStack(const VM &vm, const Program &program) {
     if (vm.stackSize == 0) return;
-    auto top = vm.topStack();
-    switch (top.type) {
+    auto last_instruction = program.segments[0].instructions.back();
+    auto type = getInstructionType(program, last_instruction);
+    switch (type) {
         case VariableType::Bool:
-            std::cout << (top.value == 0 ? "false" : "true") << std::endl;
+            std::cout << (vm.topStack().value == 0 ? "false" : "true") << std::endl;
             break;
         case VariableType::I32:
-            std::cout << (int32_t) top.value << std::endl;
+            std::cout << (int32_t) vm.topStack().value << std::endl;
             break;
         case VariableType::I64: {
-            auto val = vm.topDoubleStack();
-            std::cout << val.value << std::endl;
+            std::cout << vm.topDoubleStack().value << std::endl;
         } break;
         case VariableType::U32:
-            std::cout << (uint32_t) top.value << std::endl;
+            std::cout << (uint32_t) vm.topStack().value << std::endl;
             break;
         case VariableType::Object: {
             auto stackObj = vm.topDoubleStack();
-            auto obj = reinterpret_cast<Object *>(stackObj.value);
+            auto obj = reinterpret_cast<Object *>(vm.topDoubleStack().value);
             if (obj->objType == Object::Type::String) {
                 std::cout << stackObj.asString() << std::endl;
             }
@@ -49,7 +50,7 @@ int readFile(const char *filename) {
         printf("[-] %s\n", error.what());
         return EXIT_FAILURE;
     }
-    printTopStack(vm);
+    printTopStack(vm, program);
     return EXIT_SUCCESS;
 }
 
@@ -69,7 +70,7 @@ int repl() {
             printf("[-] %s\n", error.what());
             continue;
         }
-        printTopStack(vm);
+        printTopStack(vm, program);
     }
     return EXIT_SUCCESS;
 }

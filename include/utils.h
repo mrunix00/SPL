@@ -38,11 +38,6 @@
                                            : Instruction::InstructionType::OPERATION##GlobalI64;            \
                 instruction.params.index = id;                                                              \
                 break;                                                                                      \
-            case VariableType::Type::U32:                                                                   \
-                instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalU32              \
-                                           : Instruction::InstructionType::OPERATION##GlobalU32;            \
-                instruction.params.index = id;                                                              \
-                break;                                                                                      \
             default:                                                                                        \
                 throw std::runtime_error("[Node::compile] Invalid variable type!");                         \
         }                                                                                                   \

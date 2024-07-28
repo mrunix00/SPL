@@ -198,38 +198,29 @@ void VM::run(const Program &program) {
                 auto a = popStack();
                 pushStack(a < b);
             } break;
-            case Instruction::IncrementU32:
             case Instruction::InstructionType::IncrementI32: {
                 auto val = popStack();
                 pushStack(val + 1);
             } break;
-            case Instruction::DecrementU32:
             case Instruction::InstructionType::DecrementI32: {
                 auto val = popStack();
                 pushStack(val - 1);
             } break;
-            case Instruction::InstructionType::LoadU32: {
-                pushStack(instruction.params.u32);
-            } break;
             case Instruction::InstructionType::LoadI32: {
                 pushStack(instruction.params.i32);
             } break;
-            case Instruction::InstructionType::StoreGlobalI32:
-            case Instruction::InstructionType::StoreGlobalU32: {
+            case Instruction::InstructionType::StoreGlobalI32: {
                 auto val = popStack();
                 setGlobal(instruction.params.index, val);
             } break;
-            case Instruction::InstructionType::LoadGlobalU32:
             case Instruction::InstructionType::LoadGlobalI32: {
                 auto val = getGlobal(instruction.params.index);
                 pushStack(val);
             } break;
-            case Instruction::InstructionType::StoreLocalU32:
             case Instruction::InstructionType::StoreLocalI32: {
                 auto val = popStack();
                 setLocal(instruction.params.index, val);
             } break;
-            case Instruction::InstructionType::LoadLocalU32:
             case Instruction::InstructionType::LoadLocalI32: {
                 auto val = getLocal(instruction.params.index);
                 pushStack(val);
@@ -358,8 +349,7 @@ void VM::run(const Program &program) {
                 auto val = getDoubleLocal(instruction.params.index);
                 pushDoubleStack(val);
             } break;
-            case Instruction::ConvertI32toI64:
-            case Instruction::ConvertU32toI64: {
+            case Instruction::ConvertI32toI64: {
                 auto val = popStack();
                 pushDoubleStack(val);
             } break;

@@ -34,34 +34,26 @@ struct Instruction {
         EqualI64,
         NotEqualI32,
         NotEqualI64,
-        IncrementU32,
         IncrementI32,
         IncrementI64,
-        DecrementU32,
         DecrementI32,
         DecrementI64,
         StoreGlobalI32,
         StoreGlobalI64,
-        StoreGlobalU32,
         StoreGlobalObject,
         StoreLocalI32,
         StoreLocalI64,
-        StoreLocalU32,
         StoreLocalObject,
         LoadI32,
-        LoadU32,
         LoadI64,
         LoadObject,
         LoadGlobalI32,
         LoadGlobalI64,
-        LoadGlobalU32,
         LoadGlobalObject,
         LoadLocalI32,
         LoadLocalI64,
-        LoadLocalU32,
         LoadLocalObject,
         ConvertI32toI64,
-        ConvertU32toI64,
         Return,
         Call,
         JumpIfFalse,
@@ -72,7 +64,6 @@ struct Instruction {
         size_t index;
         int32_t i32;
         int64_t i64;
-        uint32_t u32;
         struct {
             size_t index;
             int32_t i32;
@@ -81,10 +72,6 @@ struct Instruction {
             size_t index;
             int64_t i64;
         } ri64;
-        struct {
-            size_t index;
-            uint32_t u32;
-        } ru32;
     } params{};
 };
 
@@ -94,7 +81,6 @@ struct VariableType {
         Bool,
         I32,
         I64,
-        U32,
         Object,
         Function
     } type;

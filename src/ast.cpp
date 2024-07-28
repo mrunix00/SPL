@@ -151,7 +151,6 @@ void Declaration::compile(Program &program, Segment &segment) const {
                     emitStore(program, segment, identifier.token.value);
                 } break;
                 case Bool:
-                    DECLARE_VAR_CASE(U32, u32, uint32_t)
                     DECLARE_VAR_CASE(I32, i32, int32_t)
                     DECLARE_VAR_CASE(I64, i64, int64_t)
                 default:
@@ -396,7 +395,6 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
     switch (op.type) {
         case Increment:
             switch (varType->type) {
-                VAR_CASE(Increment, U32)
                 VAR_CASE(Increment, I32)
                 VAR_CASE(Increment, I64)
                 default:
@@ -405,7 +403,6 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
             break;
         case Decrement:
             switch (varType->type) {
-                VAR_CASE(Decrement, U32)
                 VAR_CASE(Decrement, I32)
                 VAR_CASE(Decrement, I64)
                 default:

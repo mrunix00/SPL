@@ -13,7 +13,6 @@ VariableType::Type varTypeConvert(AbstractSyntaxTree *ast) {
             {Bool, VariableType::Bool},
             {I32, VariableType::I32},
             {I64, VariableType::I64},
-            {U32, VariableType::U32},
             {Str, VariableType::Object},
     };
     if (types.find(token.type) == types.end())
@@ -27,7 +26,6 @@ VariableType::Type biggestType(VariableType::Type first, VariableType::Type seco
             switch (second) {
                 case VariableType::I32:
                     return first;
-                case VariableType::U32:
                 case VariableType::I64:
                     return second;
                 default:
@@ -36,19 +34,8 @@ VariableType::Type biggestType(VariableType::Type first, VariableType::Type seco
         case VariableType::I64:
             switch (second) {
                 case VariableType::I32:
-                case VariableType::U32:
                 case VariableType::I64:
                     return first;
-                default:
-                    throw std::runtime_error("Type mismatch!");
-            }
-        case VariableType::U32:
-            switch (second) {
-                case VariableType::I32:
-                case VariableType::U32:
-                    return first;
-                case VariableType::I64:
-                    return second;
                 default:
                     throw std::runtime_error("Type mismatch!");
             }
@@ -125,7 +112,6 @@ VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntax
 #define TYPE_CASE(INS)                                                             \
     case GenericInstruction::INS: {                                                \
         switch (type) {                                                            \
-            case VariableType::U32:                                                \
             case VariableType::Bool:                                               \
             case VariableType::I32:                                                \
                 return {Instruction::InstructionType::INS##I32};                   \
@@ -159,11 +145,6 @@ Instruction emitLoad(VariableType::Type type, const Token &token) {
                     .type = Instruction::InstructionType::LoadI32,
                     .params = {.i32 = std::stoi(token.value)},
             };
-        case VariableType::U32:
-            return Instruction{
-                    .type = Instruction::InstructionType::LoadU32,
-                    .params = {.u32 = (uint32_t) std::stoul(token.value)},
-            };
         case VariableType::I64:
             return Instruction{
                     .type = Instruction::InstructionType::LoadI64,
@@ -180,8 +161,6 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
     switch (from) {
         case VariableType::I32:
             switch (to) {
-                case VariableType::U32:
-                    return;
                 case VariableType::I64: {
                     if (instructions.back().type == Instruction::InstructionType::LoadI32) {
                         instructions.back().type = Instruction::InstructionType::LoadI64;
@@ -194,22 +173,6 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
                 default:
                     throw std::runtime_error("Invalid type cast");
             }
-        case VariableType::U32:
-            switch (to) {
-                case VariableType::I32:
-                    return;
-                case VariableType::I64: {
-                    if (instructions.back().type == Instruction::InstructionType::LoadU32) {
-                        instructions.back().type = Instruction::InstructionType::LoadI64;
-                        auto oldVal = instructions.back().params.u32;
-                        instructions.back().params.i64 = oldVal;
-                        return;
-                    }
-                    return instructions.push_back({.type = Instruction::InstructionType::ConvertU32toI64});
-                }
-                default:
-                    throw std::runtime_error("Invalid type cast");
-            }
         default:
             throw std::runtime_error("Invalid type cast");
     }
@@ -217,8 +180,8 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
 
 size_t sizeOfType(VariableType::Type type) {
     switch (type) {
+        case VariableType::Bool:
         case VariableType::I32:
-        case VariableType::U32:
             return 1;
         case VariableType::Object:
         case VariableType::I64:
@@ -249,14 +212,6 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
         case Instruction::InstructionType::StoreGlobalI32:
         case Instruction::InstructionType::LoadGlobalI32:
             return VariableType::I32;
-        case Instruction::InstructionType::LoadU32:
-        case Instruction::InstructionType::StoreLocalU32:
-        case Instruction::InstructionType::LoadLocalU32:
-        case Instruction::InstructionType::StoreGlobalU32:
-        case Instruction::InstructionType::LoadGlobalU32:
-        case Instruction::InstructionType::IncrementU32:
-        case Instruction::InstructionType::DecrementU32:
-            return VariableType::U32;
         case Instruction::InstructionType::LoadI64:
         case Instruction::InstructionType::AddI64:
         case Instruction::InstructionType::SubI64:
@@ -276,7 +231,6 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
         case Instruction::InstructionType::StoreGlobalI64:
         case Instruction::InstructionType::LoadGlobalI64:
         case Instruction::InstructionType::ConvertI32toI64:
-        case Instruction::InstructionType::ConvertU32toI64:
             return VariableType::I64;
         case Instruction::InstructionType::LoadObject:
         case Instruction::InstructionType::StoreLocalObject:

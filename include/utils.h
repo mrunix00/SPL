@@ -105,7 +105,6 @@ VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntax
 Instruction getInstructionWithType(GenericInstruction instruction, VariableType::Type type);
 Instruction emitLoad(VariableType::Type, const Token &token);
 void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, VariableType::Type to);
-size_t sizeOfType(VariableType::Type type);
 VariableType::Type biggestType(VariableType::Type first, VariableType::Type second);
 VariableType::Type getInstructionType(const Program &program, const Instruction &instruction);
 

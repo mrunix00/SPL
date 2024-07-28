@@ -168,16 +168,14 @@ void Declaration::compile(Program &program, Segment &segment) const {
             segment.declare_function(identifier.token.value,
                                      new FunctionType(returnType, arguments),
                                      program.segments.size());
-            size_t index = 0;
-            for (auto argument: functionDeclaration->arguments) {
+            for (size_t index = 0; index < functionDeclaration->arguments.size(); index++) {
+                auto argument = functionDeclaration->arguments[index];
                 newSegment.locals[argument->identifier.token.value] = Variable(
                         argument->identifier.token.value,
                         new VariableType(deduceType(program, segment, argument)),
-                        index,
-                        sizeOfType(varTypeConvert(functionDeclaration->returnType)));
-                newSegment.locals_capacity += sizeOfType(deduceType(program, segment, argument));
-                index += sizeOfType(varTypeConvert(argument->type.value()));
+                        index);
             }
+            newSegment.locals_capacity = newSegment.locals.size();
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);
         } break;

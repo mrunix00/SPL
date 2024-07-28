@@ -178,19 +178,6 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
     }
 }
 
-size_t sizeOfType(VariableType::Type type) {
-    switch (type) {
-        case VariableType::Bool:
-        case VariableType::I32:
-            return 1;
-        case VariableType::Object:
-        case VariableType::I64:
-            return 2;
-        default:
-            throw std::runtime_error("Invalid type");
-    }
-}
-
 VariableType::Type getInstructionType(const Program &program, const Instruction &instruction) {
     switch (instruction.type) {
         case Instruction::InstructionType::EqualI32:

@@ -92,7 +92,7 @@ TEST(VM, SimpleI64VariableDeclaration) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(vm.topDoubleStack(), static_cast<int64_t>(42));
+    ASSERT_EQ(vm.topStack(), static_cast<int64_t>(42));
 }
 
 TEST(VM, BinaryExpressionWithMultipleTypes) {
@@ -102,7 +102,7 @@ TEST(VM, BinaryExpressionWithMultipleTypes) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(vm.topDoubleStack(), 84);
+    ASSERT_EQ(vm.topStack(), 84);
 }
 
 TEST(VM, SimpleVariableAssignment) {
@@ -130,7 +130,7 @@ TEST(VM, RightIncrementUnaryOperatorI64) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(vm.topDoubleStack(), 43);
+    ASSERT_EQ(vm.topStack(), 43);
 }
 
 TEST(VM, RightDecrementUnaryOperator) {
@@ -150,7 +150,7 @@ TEST(VM, RightDecrementUnaryOperatorI64) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(vm.topDoubleStack(), 41);
+    ASSERT_EQ(vm.topStack(), 41);
 }
 
 TEST(VM, LeftIncrementUnaryOperator) {
@@ -208,7 +208,7 @@ TEST(VM, FunctionWithDifferentReturnType) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(vm.topDoubleStack(), 30);
+    ASSERT_EQ(vm.topStack(), 30);
 }
 
 TEST(VM, RecursiveFunction) {
@@ -248,6 +248,6 @@ TEST(VM, DeclareStrings) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    auto obj = reinterpret_cast<StringObject *>(vm.topDoubleStack());
+    auto obj = reinterpret_cast<StringObject *>(vm.topStack());
     ASSERT_EQ(*obj, "Hello World");
 }

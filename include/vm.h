@@ -122,10 +122,9 @@ struct Variable {
     std::string name;
     VariableType *type{};
     size_t index{};
-    size_t size{};
     Variable() = default;
-    Variable(std::string name, VariableType *type, size_t index, size_t size)
-        : name(std::move(name)), type(type), index(index), size(size){};
+    Variable(std::string name, VariableType *type, size_t index)
+        : name(std::move(name)), type(type), index(index){};
 };
 
 struct Segment {
@@ -148,14 +147,14 @@ struct Program {
 };
 
 struct StackFrame {
-    uint32_t *locals{};
+    uint64_t *locals{};
     size_t localsSize{};
     size_t segmentIndex{};
     size_t currentInstruction{};
 };
 
 class VM {
-    uint32_t *stack;
+    uint64_t *stack;
     size_t stackCapacity;
     std::vector<StackFrame> callStack;
 
@@ -164,20 +163,13 @@ public:
     ~VM();
     void newStackFrame(const Segment &segment);
     void popStackFrame();
-    [[nodiscard]] uint32_t getLocal(size_t index) const;
-    void setLocal(size_t index, uint32_t value);
-    [[nodiscard]] uint32_t getGlobal(size_t index) const;
-    void setGlobal(size_t index, uint32_t value);
-    [[nodiscard]] uint64_t getDoubleLocal(size_t index) const;
-    void setDoubleLocal(size_t index, uint64_t value);
-    [[nodiscard]] uint64_t getDoubleGlobal(size_t index) const;
-    void setDoubleGlobal(size_t index, uint64_t value);
-    void pushStack(uint32_t value);
-    void pushDoubleStack(uint64_t value);
-    uint32_t popStack();
-    uint64_t popDoubleStack();
-    [[nodiscard]] uint32_t topStack() const;
-    [[nodiscard]] uint64_t topDoubleStack() const;
+    [[nodiscard]] uint64_t getLocal(size_t index) const;
+    void setLocal(size_t index, uint64_t value);
+    [[nodiscard]] uint64_t getGlobal(size_t index) const;
+    void setGlobal(size_t index, uint64_t value);
+    void pushStack(uint64_t value);
+    uint64_t popStack();
+    [[nodiscard]] uint64_t topStack() const;
 
     void run(const Program &program);
     size_t stackSize{};

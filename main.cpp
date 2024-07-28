@@ -16,10 +16,10 @@ void printTopStack(const VM &vm, const Program &program) {
             std::cout << (int32_t) vm.topStack() << std::endl;
             break;
         case VariableType::I64: {
-            std::cout << vm.topDoubleStack() << std::endl;
+            std::cout << vm.topStack() << std::endl;
         } break;
         case VariableType::Object: {
-            auto obj = std::bit_cast<Object *>(vm.topDoubleStack());
+            auto obj = std::bit_cast<Object *>(vm.topStack());
             if (obj->objType == Object::Type::String) {
                 std::cout << static_cast<StringObject *>(obj)->chars << std::endl;
             }

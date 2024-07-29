@@ -113,19 +113,21 @@ void VM::run(const Program &program) {
             callStack.front().locals = newPtr;
         }
     }
+    auto *segment = &program.segments[callStack.back().segmentIndex];
     for (;;) {
-        auto &segment = program.segments[callStack.back().segmentIndex];
-        auto &instruction = segment.instructions[callStack.back().currentInstruction];
+        auto &instruction = segment->instructions[callStack.back().currentInstruction];
         switch (instruction.type) {
             case Instruction::InstructionType::Invalid:
                 throw std::runtime_error("[VM::run] Invalid instruction!");
             case Instruction::InstructionType::Return: {
                 popStackFrame();
+                segment = &program.segments[callStack.back().segmentIndex];
                 continue;
             }
             case Instruction::InstructionType::Call: {
                 callStack.back().currentInstruction++;
                 newStackFrame(program.segments[instruction.params.index]);
+                segment = &program.segments[instruction.params.index];
                 continue;
             }
             case Instruction::InstructionType::JumpIfFalse: {

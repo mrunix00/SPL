@@ -6,7 +6,8 @@
 
 void printTopStack(const VM &vm, const Program &program) {
     if (vm.stackSize == 0) return;
-    auto last_instruction = program.segments[0].instructions.back();
+    auto number_of_instructions = program.segments[0].instructions.size();
+    auto last_instruction = program.segments[0].instructions[number_of_instructions - 2];
     auto type = getInstructionType(program, last_instruction);
     switch (type) {
         case VariableType::Bool:

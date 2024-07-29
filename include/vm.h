@@ -39,6 +39,7 @@ struct Instruction {
         Call,
         JumpIfFalse,
         Jump,
+        Exit
     } type{};
     union {
         void *ptr;

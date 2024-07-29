@@ -479,9 +479,18 @@ void ForLoop::compile(Program &program, Segment &segment) const {
 
 void compile(Program &program, const char *input) {
     auto ast = parse(input);
+    if (!program.segments.empty() &&
+        !program.segments.front().instructions.empty() &&
+        program.segments.front().instructions.back().type == Instruction::Exit) {
+        program.segments.front().instructions.pop_back();
+    }
     for (auto &node: ast) {
         node->compile(program, program.segments[0]);
     }
+    program.segments.front().instructions.push_back(
+            Instruction{
+                    .type = Instruction::InstructionType::Exit,
+            });
 }
 Program compile(const char *input) {
     Program program;

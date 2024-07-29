@@ -196,6 +196,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
             newSegment.locals_capacity = newSegment.locals.size();
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);
+            program.segments.back().stack_depth = getStackDepth(program, newSegment.instructions);
         } break;
         default:
             throw std::runtime_error("[Declaration::compile] Invalid type!");

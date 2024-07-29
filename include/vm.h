@@ -103,6 +103,7 @@ struct Segment {
     std::unordered_map<std::string, Variable> locals;
     std::unordered_map<std::string, Variable> functions;
     size_t locals_capacity;
+    size_t stack_depth;
     size_t id{};
     size_t find_local(const std::string &identifier);
     VariableType *returnType{};
@@ -117,19 +118,13 @@ struct Program {
     Variable find_function(const Segment &segment, const std::string &identifier);
 };
 
-struct StackFrame {
-    uint64_t *locals{};
-    size_t localsSize{};
-    size_t segmentIndex{};
-    size_t currentInstruction{};
-};
-
-class VM {
+struct VM {
     uint64_t *stack;
     size_t stackCapacity;
-    std::vector<StackFrame> callStack;
+    size_t stackSize{};
+    size_t globalsPtr{};
+    size_t numberOfGlobals{};
 
-public:
     VM();
     ~VM();
     void newStackFrame(const Segment &segment);
@@ -141,7 +136,8 @@ public:
     void pushStack(uint64_t value);
     uint64_t popStack();
     [[nodiscard]] uint64_t topStack() const;
+    [[nodiscard]] size_t getCurrentInstruction() const;
+    [[nodiscard]] size_t getCurrentSegment() const;
 
     void run(const Program &program);
-    size_t stackSize{};
 };

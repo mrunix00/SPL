@@ -4,19 +4,19 @@
 #include <fstream>
 #include <iostream>
 
-void printTopStack(const VM &vm, const Program &program) {
-    if (vm.stackSize == 0) return;
+void printTopStack(VM &vm, const Program &program) {
+    if (vm.stack[vm.stackSize - 3] == 0) return;
     auto last_instruction = program.segments[0].instructions.back();
     auto type = getInstructionType(program, last_instruction);
     switch (type) {
         case VariableType::Bool:
-            std::cout << (vm.topStack() == 0 ? "false" : "true") << std::endl;
+            std::cout << (vm.popStack() == 0 ? "false" : "true") << std::endl;
             break;
         case VariableType::I64: {
-            std::cout << (int64_t) vm.topStack() << std::endl;
+            std::cout << (int64_t) vm.popStack() << std::endl;
         } break;
         case VariableType::Object: {
-            auto obj = std::bit_cast<Object *>(vm.topStack());
+            auto obj = std::bit_cast<Object *>(vm.popStack());
             if (obj->objType == Object::Type::String) {
                 std::cout << static_cast<StringObject *>(obj)->chars << std::endl;
             }

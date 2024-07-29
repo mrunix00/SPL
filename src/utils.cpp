@@ -178,3 +178,54 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
             return VariableType::Invalid;
     }
 }
+
+size_t getStackDepth(const Program &program, const std::vector<Instruction> &instructions) {
+    size_t depth = 0;
+    size_t max_depth = 0;
+    for (const auto &instruction: instructions) {
+        switch (instruction.type) {
+            case Instruction::LoadI64:
+            case Instruction::LoadLocalI64:
+            case Instruction::LoadGlobalI64:
+            case Instruction::LoadObject:
+            case Instruction::LoadLocalObject:
+            case Instruction::LoadGlobalObject:
+                depth++;
+                break;
+            case Instruction::AddI64:
+            case Instruction::SubI64:
+            case Instruction::DivI64:
+            case Instruction::MulI64:
+            case Instruction::ModI64:
+            case Instruction::GreaterEqualI64:
+            case Instruction::GreaterI64:
+            case Instruction::LessEqualI64:
+            case Instruction::LessI64:
+            case Instruction::EqualI64:
+            case Instruction::NotEqualI64:
+                depth--;
+                break;
+            case Instruction::Call: {
+                auto segment = program.segments[instruction.params.index];
+                depth -= segment.locals.size();
+                depth++;
+            } break;
+            case Instruction::IncrementI64:
+            case Instruction::DecrementI64:
+            case Instruction::Jump:
+            case Instruction::JumpIfFalse:
+            case Instruction::Return:
+                continue;
+            case Instruction::StoreGlobalI64:
+            case Instruction::StoreLocalI64:
+            case Instruction::StoreGlobalObject:
+            case Instruction::StoreLocalObject:
+                depth--;
+                break;
+            case Instruction::Invalid:
+                throw std::runtime_error("Invalid instruction!");
+        }
+        if (depth > max_depth) max_depth = depth;
+    }
+    return max_depth;
+}

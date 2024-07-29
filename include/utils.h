@@ -77,6 +77,7 @@ Instruction emitLoad(VariableType::Type, const Token &token);
 void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, VariableType::Type to);
 VariableType::Type biggestType(VariableType::Type first, VariableType::Type second);
 VariableType::Type getInstructionType(const Program &program, const Instruction &instruction);
+size_t getStackDepth(const Program &program, const std::vector<Instruction> &instructions);
 
 #ifndef __cpp_lib_bit_cast
 namespace std {
@@ -87,5 +88,5 @@ namespace std {
         std::memcpy(&to, &from, sizeof(To));
         return to;
     }
-}
+}// namespace std
 #endif

@@ -1,8 +1,5 @@
 #include "vm.h"
 #include "utils.h"
-#include <cstddef>
-#include <cstdint>
-#include <stdexcept>
 
 Program::Program() {
     segments.emplace_back();
@@ -47,98 +44,120 @@ VM::VM() {
     stack = (uint64_t *) malloc(stackCapacity * sizeof(uint64_t));
     if (stack == nullptr)
         throw std::runtime_error("Memory allocation failure!");
-    callStack.push_back(StackFrame{});
 }
 VM::~VM() {
     free(stack);
-    for (auto stackFrame: callStack)
-        free(stackFrame.locals);
 }
-inline void VM::newStackFrame(const Segment &segment) {
-    auto locals = (uint64_t *) malloc(segment.locals_capacity * sizeof(uint64_t));
-    if (locals == nullptr) {
-        throw std::runtime_error("Memory allocation failure!");
-    }
-    callStack.push_back({
-            .locals = locals,
-            .localsSize = segment.locals_capacity,
-            .segmentIndex = segment.id,
-            .currentInstruction = 0,
-    });
-    for (size_t i = segment.locals_capacity - 1; i != -1; i--) {
-        setLocal(i, popStack());
-    }
-}
-inline void VM::popStackFrame() {
-    free(callStack.back().locals);
-    callStack.pop_back();
-}
-inline uint64_t VM::getLocal(const size_t index) const {
-    return callStack.back().locals[index];
-}
-inline void VM::setLocal(const size_t index, uint64_t value) {
-    callStack.back().locals[index] = value;
-}
-inline uint64_t VM::getGlobal(size_t index) const {
-    return callStack[0].locals[index];
-}
-inline void VM::setGlobal(const size_t index, uint64_t value) {
-    callStack[0].locals[index] = value;
-}
-inline void VM::pushStack(uint64_t value) {
-    if (stackSize + 1 > stackCapacity) {
-        stackCapacity *= 2;
-        auto newStack = (uint64_t *) realloc(stack, stackCapacity * sizeof(uint64_t));
+void VM::newStackFrame(const Segment &segment) {
+    auto &old_stack_ptr = stack[stackSize - 3];
+    auto stack_frame_size = segment.stack_depth + segment.locals_capacity + 3;
+    stackSize += stack_frame_size;
+    if (stackSize >= stackCapacity) {
+        auto newStack = (uint64_t *) realloc(stack, segment.locals_capacity * sizeof(uint64_t));
         if (newStack == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         }
         stack = newStack;
     }
-    stack[stackSize++] = value;
+    stack[stackSize - 1] = segment.id;                  // new segment id
+    stack[stackSize - 2] = 0;                           // current instruction index
+    stack[stackSize - 3] = stackSize - stack_frame_size;//stack pointer
+
+    for (size_t i = segment.locals_capacity - 1; i != -1; i--) {
+        auto value = stack[--old_stack_ptr];
+        setLocal(i, value);
+    }
 }
-inline uint64_t VM::popStack() {
-    return stack[--stackSize];
+inline void VM::popStackFrame() {
+    auto stack_ptr = stack[stackSize - 3];
+    stackSize = stack_ptr;
+}
+inline uint64_t VM::getLocal(const size_t index) const {
+    return stack[stackSize - 4 - index];
+}
+inline void VM::setLocal(const size_t index, uint64_t value) {
+    stack[stackSize - 4 - index] = value;
+}
+inline uint64_t VM::getGlobal(size_t index) const {
+    return stack[globalsPtr - index];
+}
+inline void VM::setGlobal(const size_t index, uint64_t value) {
+    stack[globalsPtr - index] = value;
+}
+inline void VM::pushStack(uint64_t value) {
+    auto &stack_ptr = stack[stackSize - 3];
+    stack[stack_ptr++] = value;
+}
+uint64_t VM::popStack() {
+    auto &stack_ptr = stack[stackSize - 3];
+    return stack[--stack_ptr];
 }
 uint64_t VM::topStack() const {
+    auto stack_ptr = stack[stackSize - 3];
+    return stack[stack_ptr - 1];
+}
+inline size_t VM::getCurrentInstruction() const {
+    return stack[stackSize - 2];
+}
+inline size_t VM::getCurrentSegment() const {
     return stack[stackSize - 1];
 }
 
 void VM::run(const Program &program) {
-    if (callStack.front().localsSize != program.segments.front().locals_capacity) {
-        callStack.front().localsSize = program.segments.front().locals_capacity;
-        auto *newPtr = (uint64_t *) realloc(callStack.front().locals, callStack.front().localsSize * sizeof(uint64_t));
-        if (newPtr == nullptr) {
+    auto mainSegment = program.segments.front();
+    auto mainSegmentOperandsStackDepth = getStackDepth(program, mainSegment.instructions);
+    auto newStackSize = mainSegmentOperandsStackDepth + mainSegment.locals_capacity + 3;
+    if (stackSize == 0) {
+        stackSize = newStackSize;
+        memset(stack, 0, stackSize * sizeof(uint64_t));
+        numberOfGlobals = mainSegment.locals_capacity;
+        globalsPtr = mainSegmentOperandsStackDepth + numberOfGlobals - 1;
+    } else if (stackSize != newStackSize) {
+        auto newStack = (uint64_t *) malloc(stackCapacity * sizeof(uint64_t));
+        if (newStack == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
-        } else {
-            callStack.front().locals = newPtr;
         }
+        memset(newStack, 0, newStackSize * sizeof(uint64_t));
+        auto newGlobalsPtr = mainSegmentOperandsStackDepth + mainSegment.locals_capacity - 1;
+        for (size_t i = 0; i < numberOfGlobals; i++) {
+            newStack[newGlobalsPtr - i] = stack[globalsPtr - i];
+        }
+        free(stack);
+        stack = (uint64_t *) newStack;
+        stackSize = newStackSize;
+        globalsPtr = newGlobalsPtr;
+        numberOfGlobals = mainSegment.locals_capacity;
     }
+
     for (;;) {
-        auto &segment = program.segments[callStack.back().segmentIndex];
-        if (callStack.back().currentInstruction == segment.instructions.size() && callStack.back().segmentIndex == 0) {
+        auto &segment = program.segments[getCurrentSegment()];
+        if (getCurrentInstruction() == segment.instructions.size() && getCurrentSegment() == 0) {
             break;
         }
-        auto &instruction = segment.instructions[callStack.back().currentInstruction];
+        auto &instruction = segment.instructions[getCurrentInstruction()];
         switch (instruction.type) {
             case Instruction::InstructionType::Invalid:
                 throw std::runtime_error("[VM::run] Invalid instruction!");
-            case Instruction::InstructionType::Return:
+            case Instruction::InstructionType::Return: {
+                auto ret = popStack();
                 popStackFrame();
+                pushStack(ret);
                 continue;
+            }
             case Instruction::InstructionType::Call: {
-                callStack.back().currentInstruction++;
+                stack[stackSize - 2]++;
                 newStackFrame(program.segments[instruction.params.index]);
                 continue;
             }
             case Instruction::InstructionType::JumpIfFalse: {
                 auto cond = popStack();
                 if (cond == 0) {
-                    callStack.back().currentInstruction = instruction.params.index;
+                    stack[stackSize - 2] = instruction.params.index;
                     continue;
                 }
             } break;
             case Instruction::InstructionType::Jump:
-                callStack.back().currentInstruction = instruction.params.index;
+                stack[stackSize - 2] = instruction.params.index;
                 continue;
             case Instruction::AddI64: {
                 auto a = popStack();
@@ -230,6 +249,6 @@ void VM::run(const Program &program) {
                 pushStack(std::bit_cast<uint64_t>(instruction.params.ptr));
             } break;
         }
-        callStack.back().currentInstruction++;
+        stack[stackSize - 2]++;
     }
 }

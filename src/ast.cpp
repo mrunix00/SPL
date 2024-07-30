@@ -477,6 +477,23 @@ void ForLoop::compile(Program &program, Segment &segment) const {
     segment.instructions[jump_index].params = {.index = segment.instructions.size()};
 }
 
+List::List(const std::vector<AbstractSyntaxTree *> &elements)
+    : elements(elements) {
+    nodeType = AbstractSyntaxTree::Type::List;
+    typeStr = "List";
+}
+bool List::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherForLoop = dynamic_cast<const List &>(other);
+    if (elements.size() != otherForLoop.elements.size()) return false;
+    for (size_t i = 0; i < elements.size(); i++) {
+        if (!(*elements[i] == *otherForLoop.elements[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void compile(Program &program, const char *input) {
     auto ast = parse(input);
     if (!program.segments.empty() &&

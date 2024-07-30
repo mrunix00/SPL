@@ -13,6 +13,7 @@
     std::vector<AbstractSyntaxTree*> root;
     std::vector<Declaration*>* declarations;
     std::vector<AbstractSyntaxTree*>* expressions;
+    std::vector<AbstractSyntaxTree*>* elements;
 %}
 
 %union {
@@ -31,6 +32,7 @@
 %token <str> Number String Identifier
 %type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement ForLoop
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
+%type <ast> List Elements
 
 %left Plus Minus
 %left Multiply Divide
@@ -44,6 +46,23 @@ Statement:
         root.push_back(static_cast<AbstractSyntaxTree*>($1));
     }
 ;
+
+List:
+    LBracket Elements RBracket {
+        $$ = new List(*static_cast<std::vector<AbstractSyntaxTree*>*>($2));
+    }
+    ;
+
+Elements:
+    | Elements Comma Expression {
+        elements->push_back(static_cast<AbstractSyntaxTree*>($3));
+        $$ = elements;
+    }
+    | Expression {
+        elements = new std::vector<AbstractSyntaxTree*>();
+        elements->push_back(static_cast<AbstractSyntaxTree*>($1));
+        $$ = elements;
+    }
 
 IfStatement:
     If Expression ScopedBody {
@@ -174,6 +193,7 @@ Expression:
     | WhileStatement { $$ = $1; }
     | ForLoop { $$ = $1; }
     | UnaryExpression { $$ = $1; }
+    | List { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement(static_cast<AbstractSyntaxTree*>($2));
     }

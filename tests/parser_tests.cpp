@@ -433,3 +433,19 @@ TEST(ParserTests, UnaryExpression) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, List) {
+    const char *input = "[1, 2, 3, 4];";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>{
+            new List({
+                    new Node({Number, "1"}),
+                    new Node({Number, "2"}),
+                    new Node({Number, "3"}),
+                    new Node({Number, "4"}),
+            }),
+    };
+    auto actualResult = parse(input);
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

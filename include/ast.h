@@ -22,6 +22,7 @@ struct AbstractSyntaxTree {
         IfStatement,
         WhileStatement,
         ForLoop,
+        List
     } nodeType{Type::Invalid};
     virtual ~AbstractSyntaxTree() = default;
     virtual bool operator==(const AbstractSyntaxTree &other) const = 0;
@@ -134,6 +135,12 @@ struct ForLoop : public AbstractSyntaxTree {
     ForLoop(AbstractSyntaxTree *initialization, AbstractSyntaxTree *condition, AbstractSyntaxTree *step, AbstractSyntaxTree *body);
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
+};
+
+struct List : public AbstractSyntaxTree {
+    std::vector<AbstractSyntaxTree *> elements;
+    explicit List(const std::vector<AbstractSyntaxTree *> &elements);
+    bool operator==(const AbstractSyntaxTree &other) const override;
 };
 
 std::vector<AbstractSyntaxTree *> parse(const char *input);

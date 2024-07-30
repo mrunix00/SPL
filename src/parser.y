@@ -32,7 +32,7 @@
 %token <str> Number String Identifier
 %type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement ForLoop
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
-%type <ast> List Elements
+%type <ast> List Elements ArrayType
 
 %left Plus Minus
 %left Multiply Divide
@@ -85,12 +85,19 @@ ForLoop:
     }
 ;
 
+ArrayType:
+    VarType LBracket RBracket {
+        $$ = new ArrayType(static_cast<AbstractSyntaxTree*>($1));
+    }
+;
+
 VarType:
     Int  { $$ = new Node({Int, "int"}); }
     | UInt { $$ = new Node({UInt, "uint"}); }
     | F64 { $$ = new Node({F64, "f64"}); }
     | Bool { $$ = new Node({Bool, "bool"}); }
     | Str { $$ = new Node({Str, "str"}); }
+    | ArrayType { $$ = $1; }
 ;
 
 ArgumentDeclaration:

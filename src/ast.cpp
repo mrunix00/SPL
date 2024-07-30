@@ -494,6 +494,17 @@ bool List::operator==(const AbstractSyntaxTree &other) const {
     return true;
 }
 
+ArrayType::ArrayType(AbstractSyntaxTree *type)
+    : type(type) {
+    nodeType = AbstractSyntaxTree::Type::ArrayType;
+    typeStr = "ArrayType";
+}
+bool ArrayType::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherArrayType = dynamic_cast<const ArrayType &>(other);
+    return *type == *otherArrayType.type;
+}
+
 void compile(Program &program, const char *input) {
     auto ast = parse(input);
     if (!program.segments.empty() &&

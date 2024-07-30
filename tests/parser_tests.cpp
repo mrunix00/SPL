@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "ast.h"
 #include "parser.h"
@@ -444,6 +445,23 @@ TEST(ParserTests, List) {
                     new Node({Number, "4"}),
             }),
     };
+    auto actualResult = parse(input);
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}
+
+TEST(ParserTests, ArrayDeclaration) {
+    const char *input = "define x : int[] = [1, 2, 3];";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>({new Declaration(
+            new ArrayType(new Node({Int, "int"})),
+            Node({Identifier, "x"}),
+            new List({
+                    new Node({Number, "1"}),
+                    new Node({Number, "2"}),
+                    new Node({Number, "3"}),
+            }))});
+
     auto actualResult = parse(input);
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)

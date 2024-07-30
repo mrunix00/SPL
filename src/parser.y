@@ -32,7 +32,7 @@
 %token <str> Number String Identifier
 %type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement ForLoop
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
-%type <ast> List Elements ArrayType
+%type <ast> List Elements ArrayType ArrayAccess
 
 %left Plus Minus
 %left Multiply Divide
@@ -46,6 +46,11 @@ Statement:
         root.push_back(static_cast<AbstractSyntaxTree*>($1));
     }
 ;
+
+ArrayAccess:
+    Identifier LBracket Expression RBracket {
+        $$ = new ArrayAccess(Node({Identifier, $1}), static_cast<AbstractSyntaxTree*>($3));
+    }
 
 List:
     LBracket Elements RBracket {
@@ -201,6 +206,7 @@ Expression:
     | ForLoop { $$ = $1; }
     | UnaryExpression { $$ = $1; }
     | List { $$ = $1; }
+    | ArrayAccess { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement(static_cast<AbstractSyntaxTree*>($2));
     }

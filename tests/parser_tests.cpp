@@ -467,3 +467,17 @@ TEST(ParserTests, ArrayDeclaration) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, ArrayAccess) {
+    const char *input = "x[0];";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>({
+            new ArrayAccess(
+                    Node({Identifier, "x"}),
+                    new Node({Number, "0"})),
+    });
+
+    auto actualResult = parse(input);
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

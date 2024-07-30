@@ -505,6 +505,18 @@ bool ArrayType::operator==(const AbstractSyntaxTree &other) const {
     return *type == *otherArrayType.type;
 }
 
+ArrayAccess::ArrayAccess(Node identifier, AbstractSyntaxTree *index)
+    : identifier(identifier), index(index) {
+    nodeType = AbstractSyntaxTree::Type::ArrayAccess;
+    typeStr = "ArrayAccess";
+}
+bool ArrayAccess::operator==(const AbstractSyntaxTree &other) const {
+    if (other.nodeType != nodeType) return false;
+    auto &otherArrayAccess = dynamic_cast<const ArrayAccess &>(other);
+    return identifier == otherArrayAccess.identifier &&
+           *index == *otherArrayAccess.index;
+}
+
 void compile(Program &program, const char *input) {
     auto ast = parse(input);
     if (!program.segments.empty() &&

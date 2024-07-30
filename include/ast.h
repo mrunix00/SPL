@@ -24,6 +24,7 @@ struct AbstractSyntaxTree {
         ForLoop,
         List,
         ArrayType,
+        ArrayAccess,
     } nodeType{Type::Invalid};
     virtual ~AbstractSyntaxTree() = default;
     virtual bool operator==(const AbstractSyntaxTree &other) const = 0;
@@ -147,6 +148,13 @@ struct List : public AbstractSyntaxTree {
 struct ArrayType : public AbstractSyntaxTree {
     AbstractSyntaxTree *type;
     explicit ArrayType(AbstractSyntaxTree *type);
+    bool operator==(const AbstractSyntaxTree &other) const override;
+};
+
+struct ArrayAccess : public AbstractSyntaxTree {
+    Node identifier;
+    AbstractSyntaxTree *index;
+    ArrayAccess(Node identifier, AbstractSyntaxTree *index);
     bool operator==(const AbstractSyntaxTree &other) const override;
 };
 

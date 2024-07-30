@@ -1,23 +1,29 @@
 #include "utils.h"
-#include "vm.h"
 
 void assert(bool condition, const char *message) {
     if (!condition)
         throw std::runtime_error("Assertion failed: " + std::string(message));
 }
 
-VariableType::Type varTypeConvert(AbstractSyntaxTree *ast) {
-    if (ast->nodeType != AbstractSyntaxTree::Type::Node)
+VariableType *varTypeConvert(AbstractSyntaxTree *ast) {
+    if (ast->nodeType == AbstractSyntaxTree::Type::Node) {
+        auto token = dynamic_cast<Node *>(ast)->token;
+        switch (token.type) {
+            case Bool:
+                return new VariableType(VariableType::Bool);
+            case Int:
+                return new VariableType(VariableType::I64);
+            case Str:
+                return new VariableType(VariableType::Object);
+            default:
+                throw std::runtime_error("[Declaration::compile] Invalid type: " + token.value);
+        }
+    } else if (ast->nodeType == AbstractSyntaxTree::Type::ArrayType) {
+        auto arrayType = dynamic_cast<ArrayType *>(ast);
+        return new ArrayObjectType(varTypeConvert(arrayType->type));
+    } else {
         throw std::runtime_error("[Declaration::compile] Invalid type: " + ast->typeStr);
-    auto token = dynamic_cast<Node *>(ast)->token;
-    static std::unordered_map<int, VariableType::Type> types = {
-            {Bool, VariableType::Bool},
-            {Int, VariableType::I64},
-            {Str, VariableType::Object},
-    };
-    if (types.find(token.type) == types.end())
-        throw std::runtime_error("[Declaration::compile] Invalid type: " + token.value);
-    return types.at(token.type);
+    }
 }
 
 VariableType::Type biggestType(VariableType::Type first, VariableType::Type second) {
@@ -34,29 +40,29 @@ VariableType::Type biggestType(VariableType::Type first, VariableType::Type seco
     }
 }
 
-VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast) {
+VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast) {
     switch (ast->nodeType) {
         case AbstractSyntaxTree::Type::Node: {
             auto token = dynamic_cast<Node *>(ast)->token;
             switch (token.type) {
                 case String:
-                    return VariableType::Object;
+                    return new VariableType(VariableType::Object);
                 case True:
                 case False:
-                    return VariableType::Bool;
+                    return new VariableType(VariableType::Bool);
                 case Number: {
                     try {
                         std::stol(token.value);
-                        return VariableType::I64;
+                        return new VariableType(VariableType::I64);
                     } catch (std::exception &) {
                         throw std::runtime_error("Invalid number: " + token.value);
                     }
                 }
                 case Identifier: {
                     if (segment.find_local(token.value) != -1)
-                        return segment.locals[token.value].type->type;
+                        return new VariableType(segment.locals[token.value].type->type);
                     if (program.find_global(token.value) != -1)
-                        return program.segments[0].locals[token.value].type->type;
+                        return new VariableType(program.segments[0].locals[token.value].type->type);
                     throw std::runtime_error("Identifier not found: " + token.value);
                 }
                 default:
@@ -71,15 +77,15 @@ VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntax
             auto binaryExpr = dynamic_cast<BinaryExpression *>(ast);
             if (binaryExpr->op.type == Less || binaryExpr->op.type == Greater || binaryExpr->op.type == LessEqual ||
                 binaryExpr->op.type == GreaterEqual || binaryExpr->op.type == Equal || binaryExpr->op.type == NotEqual)
-                return VariableType::Bool;
+                return new VariableType(VariableType::Bool);
             auto left = deduceType(program, segment, binaryExpr->left);
             auto right = deduceType(program, segment, binaryExpr->right);
-            return biggestType(left, right);
+            return new VariableType(biggestType(left->type, right->type));
         }
         case AbstractSyntaxTree::Type::FunctionCall: {
             auto call = dynamic_cast<FunctionCall *>(ast);
             auto function = program.find_function(segment, call->identifier.token.value);
-            return ((FunctionType *) function.type)->returnType->type;
+            return new VariableType(((FunctionType *) function.type)->returnType->type);
         }
         case AbstractSyntaxTree::Type::Declaration: {
             auto declaration = dynamic_cast<Declaration *>(ast);
@@ -168,9 +174,17 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
         case Instruction::InstructionType::LoadGlobalObject:
         case Instruction::InstructionType::MakeArray:
             return VariableType::Object;
-        case Instruction::InstructionType::LoadArrayElement:
-            // TODO: Handle other types
-            return VariableType::I64;
+        case Instruction::InstructionType::LoadFromLocalArray:
+        case Instruction::InstructionType::LoadFromGlobalArray: {
+            auto array_index = instruction.params.index;
+            auto locals = program.segments[0].locals;
+            for (auto &local: locals) {
+                if (local.second.index == array_index) {
+                    auto type = (ArrayObjectType *) local.second.type;
+                    return type->elementType->type;
+                }
+            }
+        } break;
         case Instruction::InstructionType::Call: {
             auto func_index = instruction.params.index;
             auto function = program.segments[func_index];

@@ -1,6 +1,5 @@
 #include "ast.h"
 #include "utils.h"
-#include "vm.h"
 
 #include <utility>
 
@@ -24,7 +23,7 @@ void Node::compile(Program &program, Segment &segment) const {
         } break;
         case Number: {
             auto type = deduceType(program, segment, (AbstractSyntaxTree *) this);
-            return segment.instructions.push_back(emitLoad(type, token));
+            return segment.instructions.push_back(emitLoad(type->type, token));
         }
         case Identifier: {
             return emitLoad(program, segment, token.value);
@@ -64,12 +63,12 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
     }
     auto leftType = deduceType(program, segment, left);
     auto rightType = deduceType(program, segment, right);
-    auto finalType = biggestType(leftType, rightType);
+    auto finalType = biggestType(leftType->type, rightType->type);
 
     left->compile(program, segment);
-    typeCast(segment.instructions, leftType, finalType);
+    typeCast(segment.instructions, leftType->type, finalType);
     right->compile(program, segment);
-    typeCast(segment.instructions, rightType, finalType);
+    typeCast(segment.instructions, rightType->type, finalType);
     switch (op.type) {
         case Plus:
             return segment.instructions.push_back(getInstructionWithType(GenericInstruction::Add, finalType));
@@ -136,7 +135,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
         if (value.has_value()) {
             auto varType = deduceType(program, segment, value.value());
             value.value()->compile(program, segment);
-            segment.declare_variable(identifier.token.value, new VariableType(varType));
+            segment.declare_variable(identifier.token.value, varType);
             emitStore(program, segment, identifier.token.value);
         } else {
             throw std::runtime_error("[Declaration::compile] Cannot deduce the variable type!");
@@ -179,11 +178,11 @@ void Declaration::compile(Program &program, Segment &segment) const {
         case AbstractSyntaxTree::Type::FunctionDeclaration: {
             auto functionDeclaration = (FunctionDeclaration *) type.value();
             auto newSegment = Segment{.id = program.segments.size()};
-            auto returnType = new VariableType(varTypeConvert(functionDeclaration->returnType));
+            auto returnType = varTypeConvert(functionDeclaration->returnType);
             auto arguments = std::vector<VariableType *>();
             newSegment.returnType = returnType;
             for (auto arg: functionDeclaration->arguments)
-                arguments.push_back(new VariableType(varTypeConvert(arg->type.value())));
+                arguments.push_back(varTypeConvert(arg->type.value()));
             segment.declare_function(identifier.token.value,
                                      new FunctionType(returnType, arguments),
                                      program.segments.size());
@@ -191,7 +190,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
                 auto argument = functionDeclaration->arguments[index];
                 newSegment.locals[argument->identifier.token.value] = Variable(
                         argument->identifier.token.value,
-                        new VariableType(deduceType(program, segment, argument)),
+                        deduceType(program, segment, argument),
                         index);
             }
             newSegment.locals_capacity = newSegment.locals.size();
@@ -203,7 +202,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
                 value.value()->compile(program, segment);
                 segment.declare_variable(
                         identifier.token.value,
-                        new VariableType(VariableType::Object));
+                        varTypeConvert(type.value()));
                 segment.instructions.push_back({
                         .type = segment.id == 0 ? Instruction::InstructionType::StoreGlobalObject : Instruction::InstructionType::StoreLocalObject,
                         .params = {.index = segment.find_local(identifier.token.value)},
@@ -271,8 +270,9 @@ bool ReturnStatement::operator==(const AbstractSyntaxTree &other) const {
 }
 void ReturnStatement::compile(Program &program, Segment &segment) const {
     expression->compile(program, segment);
-    if (deduceType(program, segment, expression) != segment.returnType->type)
-        typeCast(segment.instructions, deduceType(program, segment, expression), segment.returnType->type);
+    auto type = deduceType(program, segment, expression);
+    if (type->type != segment.returnType->type)
+        typeCast(segment.instructions, type->type, segment.returnType->type);
     segment.instructions.push_back(
             Instruction{
                     .type = Instruction::InstructionType::Return,
@@ -318,7 +318,7 @@ void FunctionCall::compile(Program &program, Segment &segment) const {
         auto definedArgument = functionType->arguments[i];
         argument->compile(program, segment);
         typeCast(segment.instructions,
-                 deduceType(program, segment, argument),
+                 deduceType(program, segment, argument)->type,
                  definedArgument->type);
     }
 
@@ -356,7 +356,7 @@ bool IfStatement::operator==(const AbstractSyntaxTree &other) const {
            elseBody.has_value() == otherIfStatement.elseBody.has_value();
 }
 void IfStatement::compile(Program &program, Segment &segment) const {
-    if (deduceType(program, segment, condition) != VariableType::Bool)
+    if (deduceType(program, segment, condition)->type != VariableType::Bool)
         throw std::runtime_error("[IfStatement::compile] Condition must be a boolean!");
     condition->compile(program, segment);
     size_t jumpIndex = segment.instructions.size();
@@ -545,16 +545,11 @@ void ArrayAccess::compile(Program &program, Segment &segment) const {
         isLocal = false;
     else
         throw std::runtime_error("[ArrayAccess::compile] Identifier not found: " + identifier.token.value);
-    auto varIndex = isLocal ?
-                    segment.find_local(identifier.token.value) :
-                    program.find_global(identifier.token.value);
-    segment.instructions.push_back({
-            .type = isLocal ? Instruction::LoadLocalObject : Instruction::LoadGlobalObject,
-            .params = {.index = varIndex},
-    });
+    auto varIndex = isLocal ? segment.find_local(identifier.token.value) : program.find_global(identifier.token.value);
     index->compile(program, segment);
     segment.instructions.push_back({
-            .type = Instruction::LoadArrayElement,
+            .type = isLocal ? Instruction::LoadFromLocalArray : Instruction::LoadFromGlobalArray,
+            .params = {.index = varIndex},
     });
 }
 

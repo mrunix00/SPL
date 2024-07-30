@@ -35,7 +35,8 @@ struct Instruction {
         LoadLocalI64,
         LoadLocalObject,
         MakeArray,
-        LoadArrayElement,
+        LoadFromLocalArray,
+        LoadFromGlobalArray,
         Return,
         Call,
         JumpIfFalse,
@@ -55,16 +56,20 @@ struct VariableType {
         Bool,
         I64,
         Object,
+        Array,
         Function
     } type;
     explicit VariableType(Type type) : type(type){};
 };
-
 struct FunctionType : public VariableType {
     VariableType *returnType;
     std::vector<VariableType *> arguments;
     FunctionType(VariableType *returnType, std::vector<VariableType *> arguments)
         : VariableType(Function), returnType(returnType), arguments(std::move(arguments)){};
+};
+struct ArrayObjectType : public VariableType {
+    VariableType *elementType;
+    explicit ArrayObjectType(VariableType *elementType) : VariableType(Object), elementType(elementType){};
 };
 
 struct Object {

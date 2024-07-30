@@ -240,9 +240,17 @@ void VM::run(const Program &program) {
                 auto newObject = new ArrayObject(instruction.params.index, data);
                 pushStack(std::bit_cast<uint64_t>(newObject));
             } break;
-            case Instruction::LoadArrayElement: {
+            case Instruction::LoadFromLocalArray: {
                 auto index = popStack();
-                auto array = std::bit_cast<ArrayObject *>(popStack());
+                auto array = std::bit_cast<ArrayObject *>(getLocal(instruction.params.index));
+                if (index >= array->size) {
+                    throw std::runtime_error("[VM::run] Array index out of bounds!");
+                }
+                pushStack(array->data[index]);
+            } break;
+            case Instruction::LoadFromGlobalArray: {
+                auto index = popStack();
+                auto array = std::bit_cast<ArrayObject *>(getGlobal(instruction.params.index));
                 if (index >= array->size) {
                     throw std::runtime_error("[VM::run] Array index out of bounds!");
                 }

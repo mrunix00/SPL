@@ -70,8 +70,8 @@ enum class GenericInstruction {
 };
 
 void assert(bool condition, const char *message);
-VariableType::Type varTypeConvert(AbstractSyntaxTree *ast);
-VariableType::Type deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast);
+VariableType *varTypeConvert(AbstractSyntaxTree *ast);
+VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree *ast);
 Instruction getInstructionWithType(GenericInstruction instruction, VariableType::Type type);
 Instruction emitLoad(VariableType::Type, const Token &token);
 void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, VariableType::Type to);
@@ -87,5 +87,5 @@ namespace std {
         std::memcpy(&to, &from, sizeof(To));
         return to;
     }
-}
+}// namespace std
 #endif

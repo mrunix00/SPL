@@ -1,5 +1,6 @@
 #include "ast.h"
 #include <gtest/gtest.h>
+#include <vector>
 
 TEST(VM, SimpleAddition) {
     const char *input = "1 + 2;";
@@ -202,4 +203,23 @@ TEST(VM, DeclareStrings) {
     vm.run(program);
     auto obj = reinterpret_cast<StringObject *>(vm.topStack());
     ASSERT_EQ(*obj, "Hello World");
+}
+
+TEST(VM, ListsDeclaration) {
+    const char *input = "define x : int[] = [1, 2, 3, 4];"
+                        "x;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    auto obj = reinterpret_cast<ArrayObject *>(vm.topStack());
+    ASSERT_EQ(*obj, std::vector<uint64_t>({1, 2, 3, 4}));
+}
+
+TEST(VM, ArrayAccess) {
+    const char *input = "define x : int[] = [1, 2, 3, 4];"
+                        "x[2];";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(vm.topStack(), 3);
 }

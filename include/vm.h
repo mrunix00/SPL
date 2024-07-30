@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -35,6 +34,8 @@ struct Instruction {
         LoadGlobalObject,
         LoadLocalI64,
         LoadLocalObject,
+        MakeArray,
+        LoadArrayElement,
         Return,
         Call,
         JumpIfFalse,
@@ -87,6 +88,27 @@ struct StringObject : public Object {
     inline bool operator==(const char *other) const {
         if (strlen(other) != length) return false;
         return std::memcmp(chars, other, length) == 0;
+    }
+};
+struct ArrayObject : public Object {
+    uint64_t *data;
+    size_t size;
+    ArrayObject(size_t size, uint64_t *data) : size(size), data(data) {}
+    inline bool operator==(ArrayObject &other) const {
+        if (size != other.size) return false;
+        for (size_t i = 0; i < size; i++) {
+            if (data[i] != other.data[i])
+                return false;
+        }
+        return true;
+    }
+    inline bool operator==(const std::vector<uint64_t> &other) const {
+        if (size != other.size()) return false;
+        for (size_t i = 0; i < size; i++) {
+            if (data[i] != other[i])
+                return false;
+        }
+        return true;
     }
 };
 

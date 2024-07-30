@@ -1,7 +1,9 @@
 #include "vm.h"
 #include "utils.h"
+#include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <stdexcept>
 
 Program::Program() {
@@ -228,6 +230,23 @@ void VM::run(const Program &program) {
             } break;
             case Instruction::LoadObject: {
                 pushStack(std::bit_cast<uint64_t>(instruction.params.ptr));
+            } break;
+            case Instruction::MakeArray: {
+                auto data = new uint64_t[instruction.params.index];
+                for (size_t i = instruction.params.index - 1; i != -1; i--) {
+                    auto val = popStack();
+                    data[i] = val;
+                }
+                auto newObject = new ArrayObject(instruction.params.index, data);
+                pushStack(std::bit_cast<uint64_t>(newObject));
+            } break;
+            case Instruction::LoadArrayElement: {
+                auto index = popStack();
+                auto array = std::bit_cast<ArrayObject *>(popStack());
+                if (index >= array->size) {
+                    throw std::runtime_error("[VM::run] Array index out of bounds!");
+                }
+                pushStack(array->data[index]);
             } break;
             case Instruction::Exit:
                 return;

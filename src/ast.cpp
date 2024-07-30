@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "utils.h"
+#include "vm.h"
 
 #include <utility>
 
@@ -196,6 +197,18 @@ void Declaration::compile(Program &program, Segment &segment) const {
             newSegment.locals_capacity = newSegment.locals.size();
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);
+        } break;
+        case AbstractSyntaxTree::Type::ArrayType: {
+            if (value.has_value()) {
+                value.value()->compile(program, segment);
+                segment.declare_variable(
+                        identifier.token.value,
+                        new VariableType(VariableType::Object));
+                segment.instructions.push_back({
+                        .type = segment.id == 0 ? Instruction::InstructionType::StoreGlobalObject : Instruction::InstructionType::StoreLocalObject,
+                        .params = {.index = segment.find_local(identifier.token.value)},
+                });
+            }
         } break;
         default:
             throw std::runtime_error("[Declaration::compile] Invalid type!");
@@ -493,6 +506,14 @@ bool List::operator==(const AbstractSyntaxTree &other) const {
     }
     return true;
 }
+void List::compile(Program &program, Segment &segment) const {
+    for (auto element: elements)
+        element->compile(program, segment);
+    segment.instructions.push_back({
+            .type = Instruction::MakeArray,
+            .params = {.index = elements.size()},
+    });
+}
 
 ArrayType::ArrayType(AbstractSyntaxTree *type)
     : type(type) {
@@ -506,7 +527,7 @@ bool ArrayType::operator==(const AbstractSyntaxTree &other) const {
 }
 
 ArrayAccess::ArrayAccess(Node identifier, AbstractSyntaxTree *index)
-    : identifier(identifier), index(index) {
+    : identifier(std::move(identifier)), index(index) {
     nodeType = AbstractSyntaxTree::Type::ArrayAccess;
     typeStr = "ArrayAccess";
 }
@@ -515,6 +536,26 @@ bool ArrayAccess::operator==(const AbstractSyntaxTree &other) const {
     auto &otherArrayAccess = dynamic_cast<const ArrayAccess &>(other);
     return identifier == otherArrayAccess.identifier &&
            *index == *otherArrayAccess.index;
+}
+void ArrayAccess::compile(Program &program, Segment &segment) const {
+    bool isLocal;
+    if (segment.find_local(identifier.token.value) != -1)
+        isLocal = true;
+    else if (program.find_global(identifier.token.value) != -1)
+        isLocal = false;
+    else
+        throw std::runtime_error("[ArrayAccess::compile] Identifier not found: " + identifier.token.value);
+    auto varIndex = isLocal ?
+                    segment.find_local(identifier.token.value) :
+                    program.find_global(identifier.token.value);
+    segment.instructions.push_back({
+            .type = isLocal ? Instruction::LoadLocalObject : Instruction::LoadGlobalObject,
+            .params = {.index = varIndex},
+    });
+    index->compile(program, segment);
+    segment.instructions.push_back({
+            .type = Instruction::LoadArrayElement,
+    });
 }
 
 void compile(Program &program, const char *input) {

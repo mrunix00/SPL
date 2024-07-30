@@ -143,6 +143,7 @@ struct List : public AbstractSyntaxTree {
     std::vector<AbstractSyntaxTree *> elements;
     explicit List(const std::vector<AbstractSyntaxTree *> &elements);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 struct ArrayType : public AbstractSyntaxTree {
@@ -156,6 +157,7 @@ struct ArrayAccess : public AbstractSyntaxTree {
     AbstractSyntaxTree *index;
     ArrayAccess(Node identifier, AbstractSyntaxTree *index);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 std::vector<AbstractSyntaxTree *> parse(const char *input);

@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "vm.h"
 
 void assert(bool condition, const char *message) {
     if (!condition)
@@ -165,6 +166,7 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
         case Instruction::InstructionType::LoadLocalObject:
         case Instruction::InstructionType::StoreGlobalObject:
         case Instruction::InstructionType::LoadGlobalObject:
+        case Instruction::InstructionType::MakeArray:
             return VariableType::Object;
         case Instruction::InstructionType::Call: {
             auto func_index = instruction.params.index;
@@ -175,6 +177,7 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
         case Instruction::InstructionType::JumpIfFalse:
         case Instruction::InstructionType::Return:
         case Instruction::InstructionType::Invalid:
+        case Instruction::InstructionType::Exit:
             return VariableType::Invalid;
     }
 }

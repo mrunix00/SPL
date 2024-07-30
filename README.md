@@ -31,6 +31,11 @@ make -j`nproc`
 define x : int = 42;
 define y = 42;
 ```
+### Arrays
+```c
+define arr : int[] = [1, 2, 3, 4, 5];
+define element = arr[0];
+```
 ### Function declaration
 ```c
 define add : function(x : int, y : int) -> int = {

@@ -168,6 +168,9 @@ VariableType::Type getInstructionType(const Program &program, const Instruction 
         case Instruction::InstructionType::LoadGlobalObject:
         case Instruction::InstructionType::MakeArray:
             return VariableType::Object;
+        case Instruction::InstructionType::LoadArrayElement:
+            // TODO: Handle other types
+            return VariableType::I64;
         case Instruction::InstructionType::Call: {
             auto func_index = instruction.params.index;
             auto function = program.segments[func_index];

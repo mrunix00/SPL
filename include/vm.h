@@ -70,7 +70,8 @@ struct FunctionType : public VariableType {
 struct Object {
     enum class Type {
         Invalid = 0,
-        String
+        String,
+        Array,
     } objType;
     Object() : objType(Type::Invalid){};
     explicit Object(Type type) : objType(type){};
@@ -81,7 +82,6 @@ struct StringObject : public Object {
     char *chars;
     StringObject(size_t length, char *chars) : Object(Type::String), length(length), chars(chars){};
     inline bool operator==(StringObject &other) const {
-        if (objType != other.objType) return false;
         if (length != other.length) return false;
         return std::memcmp(chars, other.chars, length) == 0;
     }
@@ -93,7 +93,7 @@ struct StringObject : public Object {
 struct ArrayObject : public Object {
     uint64_t *data;
     size_t size;
-    ArrayObject(size_t size, uint64_t *data) : size(size), data(data) {}
+    ArrayObject(size_t size, uint64_t *data) : Object(Object::Type::Array), size(size), data(data) {}
     inline bool operator==(ArrayObject &other) const {
         if (size != other.size) return false;
         for (size_t i = 0; i < size; i++) {

@@ -20,6 +20,14 @@ void printTopStack(const VM &vm, const Program &program) {
             auto obj = std::bit_cast<Object *>(vm.topStack());
             if (obj->objType == Object::Type::String) {
                 std::cout << static_cast<StringObject *>(obj)->chars << std::endl;
+            } else if (obj->objType == Object::Type::Array) {
+                auto array = static_cast<ArrayObject *>(obj);
+                std::cout << "[";
+                for (size_t i = 0; i < array->size; i++) {
+                    std::cout << array->data[i];
+                    if (i != array->size - 1) std::cout << ", ";
+                }
+                std::cout << "]" << std::endl;
             }
         }
         default:

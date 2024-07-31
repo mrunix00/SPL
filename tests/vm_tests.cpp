@@ -125,6 +125,26 @@ TEST(VM, LeftIncrementUnaryOperator) {
     ASSERT_EQ(vm.topStack(), 43);
 }
 
+TEST(VM, IncrementAssign) {
+    const char *input = "define a : int = 42;"
+                        "a += 27;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(vm.topStack(), 69);
+}
+
+TEST(VM, DecrementAssign) {
+    const char *input = "define a : int = 69;"
+                        "a -= 27;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(vm.topStack(), 42);
+}
+
 TEST(VM, LeftDecrementUnaryOperator) {
     const char *input = "define a : int = 42;"
                         "--a;"

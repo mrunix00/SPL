@@ -61,6 +61,35 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
         emitStore(program, segment, dynamic_cast<Node &>(*left).token.value);
         return;
     }
+    if (op.type == IncrementAssign || op.type == DecrementAssign) {
+        auto node = dynamic_cast<Node *>(left);
+        if (node->token.type != Identifier)
+            throw std::runtime_error("[BinaryExpression::compile] Invalid expression varType!");
+        auto varType = segment.find_local(node->token.value) != -1 ? segment.locals[node->token.value].type : program.segments[0].locals[node->token.value].type;
+        emitLoad(program, segment, node->token.value);
+        right->compile(program, segment);
+        switch (op.type) {
+            case IncrementAssign:
+                switch (varType->type) {
+                    VAR_CASE(Add, I64)
+                    default:
+                        throw std::runtime_error("[BinaryExpression::compile] Invalid varType!");
+                }
+                break;
+            case DecrementAssign:
+                switch (varType->type) {
+                    VAR_CASE(Sub, I64)
+                    default:
+                        throw std::runtime_error("[BinaryExpression::compile] Invalid varType!");
+                }
+                break;
+            default:
+                throw std::runtime_error("[BinaryExpression::compile] Invalid operator: " + op.value);
+        }
+        emitStore(program, segment, node->token.value);
+        return;
+    }
+
     auto leftType = deduceType(program, segment, left);
     auto rightType = deduceType(program, segment, right);
     auto finalType = biggestType(leftType->type, rightType->type);

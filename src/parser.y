@@ -255,6 +255,12 @@ Expression:
     | Expression GreaterEqual Expression {
         $$ = new BinaryExpression(static_cast<AbstractSyntaxTree*>($1), static_cast<AbstractSyntaxTree*>($3), {GreaterEqual, ">="});
     }
+    | Expression IncrementAssign Expression {
+        $$ = new BinaryExpression(static_cast<AbstractSyntaxTree*>($1), static_cast<AbstractSyntaxTree*>($3), {IncrementAssign, "+="});
+    }
+    | Expression DecrementAssign Expression {
+        $$ = new BinaryExpression(static_cast<AbstractSyntaxTree*>($1), static_cast<AbstractSyntaxTree*>($3), {DecrementAssign, "-="});
+    }
 ;
 %%
 

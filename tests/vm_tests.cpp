@@ -243,3 +243,14 @@ TEST(VM, ArrayAccess) {
     vm.run(program);
     ASSERT_EQ(vm.topStack(), 3);
 }
+
+TEST(VM, AppendToArray){
+    const char *input = "define x : int[] = [1, 2, 3, 4];"
+                        "x += 5;"
+                        "x;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    auto obj = reinterpret_cast<ArrayObject *>(vm.topStack());
+    ASSERT_EQ(*obj, std::vector<uint64_t>({1, 2, 3, 4, 5}));
+}

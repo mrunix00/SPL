@@ -61,23 +61,28 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
         emitStore(program, segment, dynamic_cast<Node &>(*left).token.value);
         return;
     }
-    if (op.type == IncrementAssign || op.type == DecrementAssign) {
+    if ((op.type == IncrementAssign || op.type == DecrementAssign) &&
+        left->nodeType == AbstractSyntaxTree::Type::Node) {
         auto node = dynamic_cast<Node *>(left);
         if (node->token.type != Identifier)
             throw std::runtime_error("[BinaryExpression::compile] Invalid expression varType!");
-        auto varType = segment.find_local(node->token.value) != -1 ? segment.locals[node->token.value].type : program.segments[0].locals[node->token.value].type;
+        auto varType = segment.find_local(node->token.value) != -1 ? segment.locals[node->token.value] : program.segments[0].locals[node->token.value];
         emitLoad(program, segment, node->token.value);
         right->compile(program, segment);
         switch (op.type) {
             case IncrementAssign:
-                switch (varType->type) {
+                switch (varType.type->type) {
                     VAR_CASE(Add, I64)
+                    case VariableType::Array: {
+                        left->compile(program, segment);
+                        segment.instructions.push_back({.type = Instruction::AppendToArray});
+                    } break;
                     default:
                         throw std::runtime_error("[BinaryExpression::compile] Invalid varType!");
                 }
                 break;
             case DecrementAssign:
-                switch (varType->type) {
+                switch (varType.type->type) {
                     VAR_CASE(Sub, I64)
                     default:
                         throw std::runtime_error("[BinaryExpression::compile] Invalid varType!");

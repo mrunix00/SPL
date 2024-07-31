@@ -232,7 +232,10 @@ void VM::run(const Program &program) {
                 pushStack(std::bit_cast<uint64_t>(instruction.params.ptr));
             } break;
             case Instruction::MakeArray: {
-                auto data = new uint64_t[instruction.params.index];
+                auto data = (uint64_t *) malloc(instruction.params.index * sizeof(uint64_t));
+                if (data == nullptr) {
+                    throw std::runtime_error("Memory allocation failure!");
+                }
                 for (size_t i = instruction.params.index - 1; i != -1; i--) {
                     auto val = popStack();
                     data[i] = val;
@@ -255,6 +258,17 @@ void VM::run(const Program &program) {
                     throw std::runtime_error("[VM::run] Array index out of bounds!");
                 }
                 pushStack(array->data[index]);
+            } break;
+            case Instruction::AppendToArray: {
+                auto array = std::bit_cast<ArrayObject *>(popStack());
+                auto val = popStack();
+                auto data = (uint64_t*) realloc(array->data, (array->size + 1) * sizeof(uint64_t));
+                if (data == nullptr) {
+                    throw std::runtime_error("Memory allocation failure!");
+                }
+                array->data = data;
+                array->data[array->size++] = val;
+                pushStack(std::bit_cast<uint64_t>(array));
             } break;
             case Instruction::Exit:
                 return;

@@ -37,6 +37,7 @@ struct Instruction {
         MakeArray,
         LoadFromLocalArray,
         LoadFromGlobalArray,
+        AppendToArray,
         Return,
         Call,
         JumpIfFalse,
@@ -69,7 +70,7 @@ struct FunctionType : public VariableType {
 };
 struct ArrayObjectType : public VariableType {
     VariableType *elementType;
-    explicit ArrayObjectType(VariableType *elementType) : VariableType(Object), elementType(elementType){};
+    explicit ArrayObjectType(VariableType *elementType) : VariableType(Array), elementType(elementType){};
 };
 
 struct Object {

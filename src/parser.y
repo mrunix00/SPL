@@ -1,6 +1,7 @@
 %{
     #include <iostream>
     #include <vector>
+    #include <stack>
     #include <stdexcept>
     #include "ast.h"
     #include "lexer.h"
@@ -12,8 +13,22 @@
 
     std::vector<AbstractSyntaxTree*> root;
     std::vector<Declaration*>* declarations;
-    std::vector<AbstractSyntaxTree*>* expressions;
     std::vector<AbstractSyntaxTree*>* elements;
+    std::vector<AbstractSyntaxTree*>* expressions;
+    std::stack<std::vector<AbstractSyntaxTree*>*> scopes;
+
+    void enter_scope() {
+        auto expr = new std::vector<AbstractSyntaxTree*>();
+        scopes.push(expr);
+    }
+    std::vector<AbstractSyntaxTree*>* current_scope() {
+        return scopes.top();
+    }
+    std::vector<AbstractSyntaxTree*>* exit_scope() {
+        auto expr = scopes.top();
+        scopes.pop();
+        return expr;
+    }
 %}
 
 %union {
@@ -138,19 +153,20 @@ TypeCast:
 
 Expressions:
     Expression Semicolon {
-        expressions = new std::vector<AbstractSyntaxTree*>();
-        expressions->push_back(static_cast<AbstractSyntaxTree*>($1));
-        $$ = expressions;
+        enter_scope();
+        current_scope()->push_back(static_cast<AbstractSyntaxTree*>($1));
+        $$ = current_scope();
     }
     | Expressions Expression Semicolon {
-        expressions->push_back(static_cast<AbstractSyntaxTree*>($2));
-        $$ = expressions;
+        current_scope()->push_back(static_cast<AbstractSyntaxTree*>($2));
+        $$ = current_scope();
     }
 ;
 
 ScopedBody:
     LBrace Expressions RBrace {
         $$ = new ScopedBody(*static_cast<std::vector<AbstractSyntaxTree*>*>($2));
+        exit_scope();
     }
 ;
 

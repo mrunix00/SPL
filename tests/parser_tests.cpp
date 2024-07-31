@@ -481,3 +481,57 @@ TEST(ParserTests, ArrayAccess) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, NestedScopes) {
+    const char *input =
+            "define fun : function(x : int) -> int = {"
+            "   define i = 0;"
+            "   define n = 0;"
+            "   while n < 128 {"
+            "       i += n;"
+            "       n++;"
+            "   };"
+            "   return i;"
+            "};";
+
+    auto expectedResult = std::vector<AbstractSyntaxTree *>({
+            new Declaration(
+                    new FunctionDeclaration(
+                            new Node({Int, "int"}),
+                            {
+                                    new Declaration(
+                                            new Node({Int, "int"}),
+                                            Node({Identifier, "x"})),
+                            }),
+                    Node({Identifier, "fun"}),
+                    new ScopedBody({
+                            new Declaration(
+                                    Node({Identifier, "i"}),
+                                    new Node({Number, "0"})),
+                            new Declaration(
+                                    Node({Identifier, "n"}),
+                                    new Node({Number, "0"})),
+                            new WhileStatement(
+                                    new BinaryExpression(
+                                            new Node({Identifier, "n"}),
+                                            new Node({Number, "128"}),
+                                            {Less, "<"}),
+                                    new ScopedBody({
+                                            new BinaryExpression(
+                                                    new Node({Identifier, "i"}),
+                                                    new Node({Identifier, "n"}),
+                                                    {IncrementAssign, "+="}),
+                                            new UnaryExpression(
+                                                    new Node({Identifier, "n"}),
+                                                    {Increment, "++"},
+                                                    UnaryExpression::Side::RIGHT),
+                                    })),
+                            new ReturnStatement(new Node({Identifier, "i"})),
+                    })),
+    });
+
+    auto actualResult = parse(input);
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

@@ -93,6 +93,19 @@ VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree 
                 return varTypeConvert(declaration->type.value());
             return deduceType(program, segment, declaration->value.value());
         }
+        case AbstractSyntaxTree::Type::ArrayAccess: {
+            auto arrayAccess = dynamic_cast<ArrayAccess *>(ast);
+            bool isLocal;
+            if (segment.find_local(arrayAccess->identifier.token.value) != -1)
+                isLocal = true;
+            else if (program.find_global(arrayAccess->identifier.token.value) != -1)
+                isLocal = false;
+            else
+                throw std::runtime_error("Identifier not found: " + arrayAccess->identifier.token.value);
+            auto type = (ArrayObjectType *) (isLocal ? segment.locals[arrayAccess->identifier.token.value].type
+                        : program.segments[0].locals[arrayAccess->identifier.token.value].type);
+            return type->elementType;
+        } break;
         default:
             throw std::runtime_error("Invalid type: " + ast->typeStr);
     }

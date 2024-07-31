@@ -228,6 +228,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
                         index);
             }
             newSegment.locals_capacity = newSegment.locals.size();
+            newSegment.number_of_args = arguments.size();
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);
         } break;

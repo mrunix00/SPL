@@ -67,7 +67,7 @@ inline void VM::newStackFrame(const Segment &segment) {
             .segmentIndex = segment.id,
             .currentInstruction = 0,
     });
-    for (size_t i = segment.locals_capacity - 1; i != -1; i--) {
+    for (size_t i = segment.number_of_args - 1; i != -1; i--) {
         setLocal(i, popStack());
     }
 }

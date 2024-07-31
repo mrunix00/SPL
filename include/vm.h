@@ -132,6 +132,7 @@ struct Segment {
     std::unordered_map<std::string, Variable> locals;
     std::unordered_map<std::string, Variable> functions;
     size_t locals_capacity;
+    size_t number_of_args{};
     size_t id{};
     size_t find_local(const std::string &identifier);
     VariableType *returnType{};

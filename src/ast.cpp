@@ -67,7 +67,6 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
         if (node->token.type != Identifier)
             throw std::runtime_error("[BinaryExpression::compile] Invalid expression varType!");
         auto varType = segment.find_local(node->token.value) != -1 ? segment.locals[node->token.value] : program.segments[0].locals[node->token.value];
-        emitLoad(program, segment, node->token.value);
         right->compile(program, segment);
         switch (op.type) {
             case IncrementAssign:

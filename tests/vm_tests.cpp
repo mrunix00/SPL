@@ -142,7 +142,7 @@ TEST(VM, DecrementAssign) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    ASSERT_EQ(vm.topStack(), 42);
+    ASSERT_EQ((int64_t) vm.topStack(), 42);
 }
 
 TEST(VM, LeftDecrementUnaryOperator) {

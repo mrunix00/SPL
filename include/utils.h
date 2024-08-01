@@ -50,11 +50,6 @@ inline uint32_t convert<uint32_t>(const std::string &value) {
     return static_cast<uint32_t>(std::stoull(value));
 }
 
-#define VAR_CASE(OP, TYPE)                                                                           \
-    case VariableType::Type::TYPE:                                                                   \
-        segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::OP##TYPE}); \
-        break;
-
 
 enum class GenericInstruction {
     Add,

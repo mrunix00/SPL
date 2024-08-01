@@ -67,12 +67,16 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
         if (node->token.type != Identifier)
             throw std::runtime_error("[BinaryExpression::compile] Invalid expression varType!");
         auto varType = segment.find_local(node->token.value) != -1 ? segment.locals[node->token.value] : program.segments[0].locals[node->token.value];
-        right->compile(program, segment);
         switch (op.type) {
             case IncrementAssign:
                 switch (varType.type->type) {
-                    VAR_CASE(Add, I64)
+                    case VariableType::Type::I64:
+                        emitLoad(program, segment, node->token.value);
+                        right->compile(program, segment);
+                        segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::AddI64});
+                        break;
                     case VariableType::Array: {
+                        right->compile(program, segment);
                         left->compile(program, segment);
                         segment.instructions.push_back({.type = Instruction::AppendToArray});
                     } break;
@@ -82,7 +86,11 @@ void BinaryExpression::compile(Program &program, Segment &segment) const {
                 break;
             case DecrementAssign:
                 switch (varType.type->type) {
-                    VAR_CASE(Sub, I64)
+                    case VariableType::Type::I64:
+                        emitLoad(program, segment, node->token.value);
+                        right->compile(program, segment);
+                        segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::SubI64});
+                        break;
                     default:
                         throw std::runtime_error("[BinaryExpression::compile] Invalid varType!");
                 }
@@ -455,18 +463,23 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
         throw std::runtime_error("[UnaryExpression::compile] Identifier not found: " + node->token.value);
     }
 
-    emitLoad(program, segment, node->token.value);
     switch (op.type) {
         case Increment:
             switch (varType->type) {
-                VAR_CASE(Increment, I64)
+                case VariableType::Type::I64:
+                    emitLoad(program, segment, node->token.value);
+                    segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementI64});
+                    break;
                 default:
                     throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");
             }
             break;
         case Decrement:
             switch (varType->type) {
-                VAR_CASE(Decrement, I64)
+                case VariableType::Type::I64:
+                    emitLoad(program, segment, node->token.value);
+                    segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DecrementI64});
+                    break;
                 default:
                     throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");
             }

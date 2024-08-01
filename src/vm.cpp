@@ -175,15 +175,15 @@ void VM::markAll() {
     }
 }
 void VM::sweep() {
-    for (auto it = objects.begin(); it != objects.end();) {
-        if (!(*it)->marked) {
-            delete *it;
-            it = objects.erase(it);
+    std::erase_if(objects, [](Object *obj) {
+        if (!obj->marked) {
+            delete obj;
+            return true;
         } else {
-            (*it)->marked = false;
-            it++;
+            obj->marked = false;
+            return false;
         }
-    }
+    });
 }
 
 void VM::run(const Program &program) {

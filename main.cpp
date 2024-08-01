@@ -5,7 +5,7 @@
 #include <iostream>
 
 void printTopStack(const VM &vm, const Program &program) {
-    if (vm.stackSize == 0) return;
+    if (vm.stackSize == 0 && vm.pointersStackSize == 0) return;
     auto number_of_instructions = program.segments[0].instructions.size();
     auto last_instruction = program.segments[0].instructions[number_of_instructions - 2];
     auto type = getInstructionType(program, last_instruction);
@@ -17,7 +17,7 @@ void printTopStack(const VM &vm, const Program &program) {
             std::cout << (int64_t) vm.topStack() << std::endl;
         } break;
         case VariableType::Object: {
-            auto obj = std::bit_cast<Object *>(vm.topStack());
+            auto obj = vm.topPointer();
             if (obj->objType == Object::Type::String) {
                 std::cout << static_cast<StringObject *>(obj)->chars << std::endl;
             } else if (obj->objType == Object::Type::Array) {
@@ -29,7 +29,7 @@ void printTopStack(const VM &vm, const Program &program) {
                 }
                 std::cout << "]" << std::endl;
             }
-        }
+        } break;
         default:
             return;
     }

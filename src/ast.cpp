@@ -219,15 +219,16 @@ void Declaration::compile(Program &program, Segment &segment) const {
             segment.declare_function(identifier.token.value,
                                      new FunctionType(returnType, arguments),
                                      program.segments.size());
-            for (size_t index = 0; index < functionDeclaration->arguments.size(); index++) {
-                auto argument = functionDeclaration->arguments[index];
-                newSegment.locals[argument->identifier.token.value] = Variable(
-                        argument->identifier.token.value,
-                        deduceType(program, segment, argument),
-                        index);
+            for (auto argument: functionDeclaration->arguments) {
+                auto argType = deduceType(program, segment, argument);
+                if(argType->type == VariableType::Object ||
+                    argType->type == VariableType::Array) {
+                    newSegment.number_of_arg_ptr++;
+                } else {
+                    newSegment.number_of_args++;
+                }
+                newSegment.declare_variable(argument->identifier.token.value, argType);
             }
-            newSegment.locals_capacity = newSegment.locals.size();
-            newSegment.number_of_args = arguments.size();
             value.value()->compile(program, newSegment);
             program.segments.push_back(newSegment);
         } break;

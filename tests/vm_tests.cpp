@@ -221,7 +221,7 @@ TEST(VM, DeclareStrings) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    auto obj = reinterpret_cast<StringObject *>(vm.topStack());
+    auto obj = (StringObject *) vm.topPointer();
     ASSERT_EQ(*obj, "Hello World");
 }
 
@@ -231,7 +231,7 @@ TEST(VM, ListsDeclaration) {
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    auto obj = reinterpret_cast<ArrayObject *>(vm.topStack());
+    auto obj = (ArrayObject *) vm.topPointer();
     ASSERT_EQ(*obj, std::vector<uint64_t>({1, 2, 3, 4}));
 }
 
@@ -244,13 +244,13 @@ TEST(VM, ArrayAccess) {
     ASSERT_EQ(vm.topStack(), 3);
 }
 
-TEST(VM, AppendToArray){
+TEST(VM, AppendToArray) {
     const char *input = "define x : int[] = [1, 2, 3, 4];"
                         "x += 5;"
                         "x;";
     VM vm;
     auto program = compile(input);
     vm.run(program);
-    auto obj = reinterpret_cast<ArrayObject *>(vm.topStack());
+    auto obj = (ArrayObject *) vm.topPointer();
     ASSERT_EQ(*obj, std::vector<uint64_t>({1, 2, 3, 4, 5}));
 }

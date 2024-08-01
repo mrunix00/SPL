@@ -27,9 +27,18 @@ Variable Program::find_function(const Segment &segment, const std::string &ident
 }
 
 void Segment::declare_variable(const std::string &name, VariableType *varType) {
-    locals[name] = Variable(name, varType, locals_capacity);
-    if (varType->type != VariableType::Type::Function) {
-        locals_capacity++;
+    switch (varType->type) {
+        case VariableType::Object:
+        case VariableType::Array:
+            locals[name] = Variable(name, varType, number_of_local_ptr);
+            number_of_local_ptr++;
+            break;
+        default:
+            locals[name] = Variable(name, varType, number_of_locals);
+            if (varType->type != VariableType::Type::Function) {
+                number_of_locals++;
+            }
+            break;
     }
 }
 size_t Segment::find_local(const std::string &identifier) {
@@ -46,33 +55,48 @@ void Segment::declare_function(const std::string &name, VariableType *funcType, 
 
 VM::VM() {
     stackCapacity = 1024;
+    pointersStackCapacity = 1024;
     stack = (uint64_t *) malloc(stackCapacity * sizeof(uint64_t));
+    pointersStack = (Object **) malloc(pointersStackCapacity * sizeof(Object *));
     if (stack == nullptr)
         throw std::runtime_error("Memory allocation failure!");
     callStack.push_back(StackFrame{});
 }
 VM::~VM() {
     free(stack);
-    for (auto stackFrame: callStack)
-        free(stackFrame.locals);
 }
 inline void VM::newStackFrame(const Segment &segment) {
-    auto locals = (uint64_t *) malloc(segment.locals_capacity * sizeof(uint64_t));
-    if (locals == nullptr) {
-        throw std::runtime_error("Memory allocation failure!");
+    uint64_t *locals{};
+    Object **pointers{};
+    if (segment.number_of_locals != 0) {
+        locals = (uint64_t *) malloc(segment.number_of_locals * sizeof(uint64_t));
+        if (locals == nullptr) {
+            throw std::runtime_error("Memory allocation failure!");
+        }
+    }
+    if (segment.number_of_local_ptr != 0) {
+        pointers = (Object **) malloc(segment.number_of_local_ptr * sizeof(Object *));
+        memset(pointers, 0, segment.number_of_local_ptr * sizeof(Object *));
+        if (pointers == nullptr) {
+            throw std::runtime_error("Memory allocation failure!");
+        }
     }
     callStack.push_back({
             .locals = locals,
-            .localsSize = segment.locals_capacity,
+            .localPointers = pointers,
+            .localsSize = segment.number_of_locals,
+            .localPointersSize = segment.number_of_local_ptr,
             .segmentIndex = segment.id,
             .currentInstruction = 0,
     });
-    for (size_t i = segment.number_of_args - 1; i != -1; i--) {
+    for (size_t i = segment.number_of_args - 1; i != -1; i--)
         setLocal(i, popStack());
-    }
+    for (size_t i = segment.number_of_arg_ptr - 1; i != -1; i--)
+        setPointer(i, popPointer());
 }
 inline void VM::popStackFrame() {
     free(callStack.back().locals);
+    free(callStack.back().localPointers);
     callStack.pop_back();
 }
 inline uint64_t VM::getLocal(const size_t index) const {
@@ -104,15 +128,81 @@ inline uint64_t VM::popStack() {
 uint64_t VM::topStack() const {
     return stack[stackSize - 1];
 }
+Object *VM::getPointer(size_t index) const {
+    return callStack.back().localPointers[index];
+}
+void VM::setPointer(size_t index, Object *object) {
+    callStack.back().localPointers[index] = object;
+}
+Object *VM::getGlobalPointer(size_t index) const {
+    return callStack.front().localPointers[index];
+}
+void VM::setGlobalPointer(size_t index, Object *object) {
+    callStack.front().localPointers[index] = object;
+}
+void VM::pushPointer(Object *obj) {
+    if (pointersStackSize + 1 > pointersStackCapacity) {
+        pointersStackCapacity *= 2;
+        auto newPointersStack = (Object **) realloc(pointersStack, pointersStackCapacity * sizeof(Object *));
+        if (newPointersStack == nullptr) {
+            throw std::runtime_error("Memory allocation failure!");
+        }
+        pointersStack = newPointersStack;
+    }
+    pointersStack[pointersStackSize++] = obj;
+}
+Object *VM::popPointer() {
+    return pointersStack[--pointersStackSize];
+}
+Object *VM::topPointer() const {
+    return pointersStack[pointersStackSize - 1];
+}
+void VM::addObject(Object *obj) {
+    objects.push_back(obj);
+    if (objects.size() > gcLimit) {
+        markAll();
+        sweep();
+    }
+}
+void VM::markAll() {
+    for (size_t i = 0; i < pointersStackSize; i++)
+        pointersStack[i]->marked = true;
+    for (auto stackFrame: callStack) {
+        for (size_t i = 0; i < stackFrame.localPointersSize; i++) {
+            if (stackFrame.localPointers[i] != nullptr)
+                stackFrame.localPointers[i]->marked = true;
+        }
+    }
+}
+void VM::sweep() {
+    for (auto it = objects.begin(); it != objects.end();) {
+        if (!(*it)->marked) {
+            delete *it;
+            it = objects.erase(it);
+        } else {
+            (*it)->marked = false;
+            it++;
+        }
+    }
+}
 
 void VM::run(const Program &program) {
-    if (callStack.front().localsSize != program.segments.front().locals_capacity) {
-        callStack.front().localsSize = program.segments.front().locals_capacity;
+    if (callStack.front().localsSize != program.segments.front().number_of_locals) {
+        callStack.front().localsSize = program.segments.front().number_of_locals;
         auto *newPtr = (uint64_t *) realloc(callStack.front().locals, callStack.front().localsSize * sizeof(uint64_t));
         if (newPtr == nullptr) {
             throw std::runtime_error("Memory allocation failure!");
         } else {
             callStack.front().locals = newPtr;
+        }
+    }
+    if (callStack.front().localPointersSize != program.segments.front().number_of_local_ptr) {
+        callStack.front().localPointersSize = program.segments.front().number_of_local_ptr;
+        auto *newPtr = (Object **) realloc(callStack.front().localPointers, callStack.front().localPointersSize * sizeof(Object *));
+        if (newPtr == nullptr) {
+            throw std::runtime_error("Memory allocation failure!");
+        } else {
+            callStack.front().localPointers = newPtr;
         }
     }
     auto *segment = &program.segments[callStack.back().segmentIndex];
@@ -205,12 +295,18 @@ void VM::run(const Program &program) {
                 auto val = popStack();
                 pushStack(val - 1);
             } break;
-            case Instruction::StoreGlobalObject:
+            case Instruction::StoreGlobalObject: {
+                auto val = popPointer();
+                setGlobalPointer(instruction.params.index, val);
+            } break;
             case Instruction::StoreGlobalI64: {
                 auto val = popStack();
                 setGlobal(instruction.params.index, val);
             } break;
-            case Instruction::StoreLocalObject:
+            case Instruction::StoreLocalObject: {
+                auto val = popPointer();
+                setPointer(instruction.params.index, val);
+            } break;
             case Instruction::StoreLocalI64: {
                 auto val = popStack();
                 setLocal(instruction.params.index, val);
@@ -218,18 +314,24 @@ void VM::run(const Program &program) {
             case Instruction::LoadI64: {
                 pushStack(instruction.params.i64);
             } break;
-            case Instruction::LoadGlobalObject:
+            case Instruction::LoadGlobalObject: {
+                auto val = getGlobalPointer(instruction.params.index);
+                pushPointer(val);
+            } break;
             case Instruction::LoadGlobalI64: {
                 auto val = getGlobal(instruction.params.index);
                 pushStack(val);
             } break;
-            case Instruction::LoadLocalObject:
+            case Instruction::LoadLocalObject: {
+                auto val = getPointer(instruction.params.index);
+                pushPointer(val);
+            } break;
             case Instruction::LoadLocalI64: {
                 auto val = getLocal(instruction.params.index);
                 pushStack(val);
             } break;
             case Instruction::LoadObject: {
-                pushStack(std::bit_cast<uint64_t>(instruction.params.ptr));
+                pushPointer((Object *) instruction.params.ptr);
             } break;
             case Instruction::MakeArray: {
                 auto data = (uint64_t *) malloc(instruction.params.index * sizeof(uint64_t));
@@ -241,11 +343,12 @@ void VM::run(const Program &program) {
                     data[i] = val;
                 }
                 auto newObject = new ArrayObject(instruction.params.index, data);
-                pushStack(std::bit_cast<uint64_t>(newObject));
+                pushPointer(newObject);
+                addObject(newObject);
             } break;
             case Instruction::LoadFromLocalArray: {
                 auto index = popStack();
-                auto array = std::bit_cast<ArrayObject *>(getLocal(instruction.params.index));
+                auto array = (ArrayObject *) getPointer(instruction.params.index);
                 if (index >= array->size) {
                     throw std::runtime_error("[VM::run] Array index out of bounds!");
                 }
@@ -253,22 +356,22 @@ void VM::run(const Program &program) {
             } break;
             case Instruction::LoadFromGlobalArray: {
                 auto index = popStack();
-                auto array = std::bit_cast<ArrayObject *>(getGlobal(instruction.params.index));
+                auto array = (ArrayObject *) getGlobalPointer(instruction.params.index);
                 if (index >= array->size) {
                     throw std::runtime_error("[VM::run] Array index out of bounds!");
                 }
                 pushStack(array->data[index]);
             } break;
             case Instruction::AppendToArray: {
-                auto array = std::bit_cast<ArrayObject *>(popStack());
+                auto array = (ArrayObject *) popPointer();
                 auto val = popStack();
-                auto data = (uint64_t*) realloc(array->data, (array->size + 1) * sizeof(uint64_t));
+                auto data = (uint64_t *) realloc(array->data, (array->size + 1) * sizeof(uint64_t));
                 if (data == nullptr) {
                     throw std::runtime_error("Memory allocation failure!");
                 }
                 array->data = data;
                 array->data[array->size++] = val;
-                pushStack(std::bit_cast<uint64_t>(array));
+                pushPointer(array);
             } break;
             case Instruction::Exit:
                 return;

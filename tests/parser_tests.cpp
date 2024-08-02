@@ -535,3 +535,36 @@ TEST(ParserTests, NestedScopes) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, ImportStatement) {
+    const char *input = "import \"foo\";";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>({
+            new ImportStatement("foo"),
+    });
+
+    auto actualResult = parse(input);
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}
+
+TEST(ParserTests, ExportStatement) {
+    const char *input = "export define fun : function() -> void = { 1+1; };";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>({
+            new ExportStatement(
+                    new Declaration(
+                            new FunctionDeclaration(new Node({Void, "void"}), {}),
+                            Node({Identifier, "fun"}),
+                            new ScopedBody({
+                                    new BinaryExpression(
+                                            new Node({Number, "1"}),
+                                            new Node({Number, "1"}),
+                                            {Plus, "+"}),
+                            }))),
+    });
+
+    auto actualResult = parse(input);
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

@@ -25,6 +25,8 @@ struct AbstractSyntaxTree {
         List,
         ArrayType,
         ArrayAccess,
+        ImportStatement,
+        ExportStatement,
     } nodeType{Type::Invalid};
     virtual ~AbstractSyntaxTree() = default;
     virtual bool operator==(const AbstractSyntaxTree &other) const = 0;
@@ -158,6 +160,18 @@ struct ArrayAccess : public AbstractSyntaxTree {
     ArrayAccess(Node identifier, AbstractSyntaxTree *index);
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
+};
+
+struct ImportStatement : public AbstractSyntaxTree {
+    std::string path;
+    explicit ImportStatement(std::string  path);
+    bool operator==(const AbstractSyntaxTree &other) const override;
+};
+
+struct ExportStatement : public AbstractSyntaxTree {
+    AbstractSyntaxTree *stm;
+    explicit ExportStatement(AbstractSyntaxTree *stm);
+    bool operator==(const AbstractSyntaxTree &other) const override;
 };
 
 std::vector<AbstractSyntaxTree *> parse(const char *input);

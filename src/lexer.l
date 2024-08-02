@@ -58,6 +58,8 @@
 "str"                       { return Str; }
 "true"                      { return True; }
 "false"                     { return False; }
+"import"                    { return Import; }
+"export"                    { return Export; }
 ":"                         { return Colon; }
 ";"                         { return Semicolon; }
 "("                         { return LParen; }

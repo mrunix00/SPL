@@ -611,6 +611,28 @@ void ArrayAccess::compile(Program &program, Segment &segment) const {
     });
 }
 
+ImportStatement::ImportStatement(std::string path)
+    : path(std::move(path)) {
+    nodeType = AbstractSyntaxTree::Type::ImportStatement;
+    typeStr = "ImportStatement";
+}
+bool ImportStatement::operator==(const AbstractSyntaxTree &other) const {
+    if (nodeType != other.nodeType) return false;
+    auto &otherImportStatement = dynamic_cast<const ImportStatement &>(other);
+    return otherImportStatement.path == path;
+}
+
+ExportStatement::ExportStatement(AbstractSyntaxTree *stm)
+    : stm(stm) {
+    nodeType = AbstractSyntaxTree::Type::ExportStatement;
+    typeStr = "ExportStatement";
+}
+bool ExportStatement::operator==(const AbstractSyntaxTree &other) const {
+    if (nodeType != other.nodeType) return false;
+    auto &otherExportStatement = dynamic_cast<const ExportStatement &>(other);
+    return *otherExportStatement.stm == *stm;
+}
+
 void compile(Program &program, const char *input) {
     auto ast = parse(input);
     if (!program.segments.empty() &&

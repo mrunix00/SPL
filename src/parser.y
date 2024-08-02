@@ -43,6 +43,7 @@
 %token Void Int UInt F64 Bool True False Str
 %token Colon Comma Semicolon Arrow Newline
 %token LParen RParen LBrace RBrace LBracket RBracket
+%token Import Export
 
 %token <str> Number String Identifier
 %type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement ForLoop
@@ -57,7 +58,13 @@
 input: | Statements;
 Statements: | Statements Statement;
 Statement:
-    Expression Semicolon {
+    Import String Semicolon {
+        root.push_back(new ImportStatement($2));
+    }
+    | Export Expression Semicolon {
+        root.push_back(new ExportStatement(static_cast<AbstractSyntaxTree*>($2)));
+    }
+    | Expression Semicolon {
         root.push_back(static_cast<AbstractSyntaxTree*>($1));
     }
 ;

@@ -166,12 +166,14 @@ struct ImportStatement : public AbstractSyntaxTree {
     std::string path;
     explicit ImportStatement(std::string  path);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 struct ExportStatement : public AbstractSyntaxTree {
     AbstractSyntaxTree *stm;
     explicit ExportStatement(AbstractSyntaxTree *stm);
     bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
 };
 
 std::vector<AbstractSyntaxTree *> parse(const char *input);

@@ -1,6 +1,8 @@
 #include "ast.h"
 #include "utils.h"
 
+#include <fstream>
+#include <sstream>
 #include <utility>
 
 Node::Node(Token token) : token(std::move(token)) {
@@ -621,16 +623,35 @@ bool ImportStatement::operator==(const AbstractSyntaxTree &other) const {
     auto &otherImportStatement = dynamic_cast<const ImportStatement &>(other);
     return otherImportStatement.path == path;
 }
+void ImportStatement::compile(Program &program, Segment &segment) const {
+   std::ifstream importedFile(path);
+   if (!importedFile.is_open()) {
+       throw std::runtime_error("Unable to open file: " + path);
+   }
+   std::stringstream fileContent;
+   fileContent << importedFile.rdbuf();
+   auto statements = parse(fileContent.str().c_str());
+   for (auto stm : statements) {
+       if(stm->nodeType == AbstractSyntaxTree::Type::ExportStatement)
+           stm->compile(program, segment);
+       delete stm;
+   }
+}
 
 ExportStatement::ExportStatement(AbstractSyntaxTree *stm)
     : stm(stm) {
     nodeType = AbstractSyntaxTree::Type::ExportStatement;
     typeStr = "ExportStatement";
+    assert(stm->nodeType == AbstractSyntaxTree::Type::Declaration,
+           "[ExportStatement]: Only declarations can be exported!");
 }
 bool ExportStatement::operator==(const AbstractSyntaxTree &other) const {
     if (nodeType != other.nodeType) return false;
     auto &otherExportStatement = dynamic_cast<const ExportStatement &>(other);
     return *otherExportStatement.stm == *stm;
+}
+void ExportStatement::compile(Program &program, Segment &segment) const {
+    stm->compile(program, segment);
 }
 
 void compile(Program &program, const char *input) {

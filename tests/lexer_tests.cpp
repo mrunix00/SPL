@@ -110,7 +110,7 @@ TEST(Lexer, Symbols) {
 TEST(Lexer, Keywords) {
     auto actual = lex(
             "define if else while for return "
-            "int uint str f64 bool true false");
+            "void int uint str f64 bool true false");
 
     std::vector<Token> expected = {
             {Define, "define"},
@@ -119,6 +119,7 @@ TEST(Lexer, Keywords) {
             {While, "while"},
             {For, "for"},
             {Return, "return"},
+            {Void, "void"},
             {Int, "int"},
             {UInt, "uint"},
             {Str, "str"},

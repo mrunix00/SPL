@@ -50,6 +50,7 @@
 "while"                     { return While; }
 "for"                       { return For; }
 "return"                    { return Return; }
+"void"                      { return Void; }
 "uint"                      { return UInt; }
 "int"                       { return Int; }
 "f64"                       { return F64; }

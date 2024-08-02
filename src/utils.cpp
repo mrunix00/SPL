@@ -15,6 +15,8 @@ VariableType *varTypeConvert(AbstractSyntaxTree *ast) {
                 return new VariableType(VariableType::I64);
             case Str:
                 return new VariableType(VariableType::Object);
+            case Void:
+                return new VariableType(VariableType::Void);
             default:
                 throw std::runtime_error("[Declaration::compile] Invalid type: " + token.value);
         }

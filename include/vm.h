@@ -54,6 +54,7 @@ struct Instruction {
 struct VariableType {
     enum Type : uint32_t {
         Invalid = 0,
+        Void,
         Bool,
         I64,
         Object,

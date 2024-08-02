@@ -40,7 +40,7 @@
 %token Increment Decrement IncrementAssign DecrementAssign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define Function If Else While For Return
-%token Int UInt F64 Bool True False Str
+%token Void Int UInt F64 Bool True False Str
 %token Colon Comma Semicolon Arrow Newline
 %token LParen RParen LBrace RBrace LBracket RBracket
 
@@ -112,7 +112,8 @@ ArrayType:
 ;
 
 VarType:
-    Int  { $$ = new Node({Int, "int"}); }
+    Void { $$ = new Node({Void, "void"}); }
+    | Int  { $$ = new Node({Int, "int"}); }
     | UInt { $$ = new Node({UInt, "uint"}); }
     | F64 { $$ = new Node({F64, "f64"}); }
     | Bool { $$ = new Node({Bool, "bool"}); }
@@ -139,7 +140,10 @@ ArgumentDeclarationsList:
 ;
 
 FunctionDeclaration:
-    Function LParen ArgumentDeclarationsList RParen Arrow VarType {
+    Function LParen RParen Arrow VarType {
+        $$ = new FunctionDeclaration(static_cast<AbstractSyntaxTree*>($5), {});
+    }
+    | Function LParen ArgumentDeclarationsList RParen Arrow VarType {
         $$ = new FunctionDeclaration(static_cast<AbstractSyntaxTree*>($6), *static_cast<std::vector<Declaration*>*>($3));
         delete static_cast<std::vector<Declaration*>*>($3);
     }
@@ -225,6 +229,9 @@ Expression:
     | ArrayAccess { $$ = $1; }
     | Return Expression {
         $$ = new ReturnStatement(static_cast<AbstractSyntaxTree*>($2));
+    }
+    | Return {
+        $$ = new ReturnStatement(nullptr);
     }
     | Define Identifier Colon Expression {
         $$ = new Declaration(static_cast<AbstractSyntaxTree*>($4), Node({Identifier, $2}));

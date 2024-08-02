@@ -254,3 +254,14 @@ TEST(VM, AppendToArray) {
     auto obj = (ArrayObject *) vm.topPointer();
     ASSERT_EQ(*obj, std::vector<uint64_t>({1, 2, 3, 4, 5}));
 }
+
+TEST(VM, VoidReturnType) {
+    const char *input = "define x = 0;"
+                        "define foo : function() -> void = { x = 42; };"
+                        "foo();"
+                        "x;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(vm.topStack(), 42);
+}

@@ -229,7 +229,7 @@ void Declaration::compile(Program &program, Segment &segment) const {
                                      program.segments.size());
             for (auto argument: functionDeclaration->arguments) {
                 auto argType = deduceType(program, segment, argument);
-                if(argType->type == VariableType::Object ||
+                if (argType->type == VariableType::Object ||
                     argType->type == VariableType::Array) {
                     newSegment.number_of_arg_ptr++;
                 } else {
@@ -238,6 +238,12 @@ void Declaration::compile(Program &program, Segment &segment) const {
                 newSegment.declare_variable(argument->identifier.token.value, argType);
             }
             value.value()->compile(program, newSegment);
+            if (returnType->type == VariableType::Type::Void &&
+                newSegment.instructions.back().type != Instruction::InstructionType::Return) {
+                newSegment.instructions.push_back({
+                        .type = Instruction::InstructionType::Return,
+                });
+            }
             program.segments.push_back(newSegment);
         } break;
         case AbstractSyntaxTree::Type::ArrayType: {
@@ -312,10 +318,14 @@ bool ReturnStatement::operator==(const AbstractSyntaxTree &other) const {
     return *expression == *dynamic_cast<const ReturnStatement &>(other).expression;
 }
 void ReturnStatement::compile(Program &program, Segment &segment) const {
-    expression->compile(program, segment);
-    auto type = deduceType(program, segment, expression);
-    if (type->type != segment.returnType->type)
-        typeCast(segment.instructions, type->type, segment.returnType->type);
+    if (expression != nullptr) {
+        expression->compile(program, segment);
+        auto type = deduceType(program, segment, expression);
+        if (type->type != segment.returnType->type)
+            typeCast(segment.instructions, type->type, segment.returnType->type);
+    }
+    if (expression == nullptr && segment.returnType->type != VariableType::Type::Void)
+        throw std::runtime_error("[ReturnStatement::compile] Return type mismatch!");
     segment.instructions.push_back(
             Instruction{
                     .type = Instruction::InstructionType::Return,

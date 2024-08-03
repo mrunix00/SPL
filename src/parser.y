@@ -75,7 +75,10 @@ ArrayAccess:
     }
 
 List:
-    LBracket Elements RBracket {
+    LBracket RBracket {
+        $$ = new List({});
+    }
+    | LBracket Elements RBracket {
         $$ = new List(*static_cast<std::vector<AbstractSyntaxTree*>*>($2));
     }
     ;

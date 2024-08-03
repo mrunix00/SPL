@@ -372,58 +372,64 @@ void VM::run(const Program &program) {
                 pushPointer(array);
             } break;
             case Instruction::LoadLib: {
-                auto libPath = (StringObject *) popPointer();
-                auto handle = dlopen(libPath->chars, RTLD_LAZY);
-                if (handle == nullptr) {
-                    throw std::runtime_error("Object file not found: " + std::string(libPath->chars));
-                }
-                auto lib = new DynamicLibObject(libPath->chars, handle);
-                pushPointer(lib);
-                addObject(lib);
+                loadNativeFunction();
             } break;
             case Instruction::CallNative: {
-                auto dynamicLib = (DynamicLibObject *) popPointer();
-                auto funcInfo = (DynamicFunctionObject *) popPointer();
-                auto func = (NativeFunction) dlsym(dynamicLib->handle, funcInfo->name.c_str());
-                if (func == nullptr) {
-                    throw std::runtime_error(dlerror());
-                }
-                std::vector<uint64_t> args;
-                for (auto arg: funcInfo->arguments) {
-                    switch (arg->type) {
-                        case VariableType::Bool:
-                        case VariableType::I64: {
-                            auto val = popStack();
-                            args.push_back(val);
-                        } break;
-                        case VariableType::Array:
-                        case VariableType::Object: {
-                            auto val = popPointer();
-                            args.push_back(std::bit_cast<uint64_t>(val));
-                        } break;
-                        default:
-                            throw std::runtime_error("[VM::run] Invalid argument type!");
-                    }
-                }
-                auto returnValue = func({
-                        .argc = args.size(),
-                        .argv = args.data(),
-                });
-                switch (returnValue.type) {
-                    case ExternReturn::SPL_VOID:
-                        break;
-                    case ExternReturn::SPL_VALUE:
-                        pushStack(returnValue.value);
-                        break;
-                    case ExternReturn::SPL_OBJECT:
-                        pushPointer(std::bit_cast<Object *>(returnValue.value));
-                        addObject(std::bit_cast<Object *>(returnValue.value));
-                        break;
-                }
+                callNativeFunction();
             } break;
             case Instruction::Exit:
                 return;
         }
         callStack.back().currentInstruction++;
     }
+}
+void VM::callNativeFunction() {
+    auto dynamicLib = (DynamicLibObject *) popPointer();
+    auto funcInfo = (DynamicFunctionObject *) popPointer();
+    auto func = (NativeFunction) dlsym(dynamicLib->handle, funcInfo->name.c_str());
+    if (func == nullptr) {
+        throw std::runtime_error(dlerror());
+    }
+    std::vector<uint64_t> args;
+    for (auto arg: funcInfo->arguments) {
+        switch (arg->type) {
+            case VariableType::Bool:
+            case VariableType::I64: {
+                auto val = popStack();
+                args.push_back(val);
+            } break;
+            case VariableType::Array:
+            case VariableType::Object: {
+                auto val = popPointer();
+                args.push_back(std::bit_cast<uint64_t>(val));
+            } break;
+            default:
+                throw std::runtime_error("[VM::run] Invalid argument type!");
+        }
+    }
+    auto returnValue = func({
+            .argc = args.size(),
+            .argv = args.data(),
+    });
+    switch (returnValue.type) {
+        case ExternReturn::SPL_VOID:
+            break;
+        case ExternReturn::SPL_VALUE:
+            pushStack(returnValue.value);
+            break;
+        case ExternReturn::SPL_OBJECT:
+            pushPointer(std::bit_cast<Object *>(returnValue.value));
+            addObject(std::bit_cast<Object *>(returnValue.value));
+            break;
+    }
+}
+void VM::loadNativeFunction() {
+    auto libPath = (StringObject *) popPointer();
+    auto handle = dlopen(libPath->chars, RTLD_LAZY);
+    if (handle == nullptr) {
+        throw std::runtime_error("Object file not found: " + std::string(libPath->chars));
+    }
+    auto lib = new DynamicLibObject(libPath->chars, handle);
+    pushPointer(lib);
+    addObject(lib);
 }

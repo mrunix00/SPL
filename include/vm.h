@@ -198,6 +198,9 @@ class VM {
     std::vector<StackFrame> callStack;
     std::vector<Object *> objects;
 
+    void callNativeFunction();
+    void loadNativeFunction();
+
 public:
     VM();
     ~VM();

@@ -1,9 +1,8 @@
 #include "vm.h"
 #include "utils.h"
-#include <bit>
-#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <dlfcn.h>
 #include <stdexcept>
 
 Program::Program() {
@@ -29,6 +28,7 @@ Variable Program::find_function(const Segment &segment, const std::string &ident
 void Segment::declare_variable(const std::string &name, VariableType *varType) {
     switch (varType->type) {
         case VariableType::Object:
+        case VariableType::NativeLib:
         case VariableType::Array:
             locals[name] = Variable(name, varType, number_of_local_ptr);
             number_of_local_ptr++;
@@ -52,7 +52,6 @@ void Segment::declare_function(const std::string &name, VariableType *funcType, 
     functions[name] = function;
     locals[name] = function;
 }
-
 VM::VM() {
     stackCapacity = 1024;
     pointersStackCapacity = 1024;
@@ -185,7 +184,6 @@ void VM::sweep() {
         }
     });
 }
-
 void VM::run(const Program &program) {
     if (callStack.front().localsSize != program.segments.front().number_of_locals) {
         callStack.front().localsSize = program.segments.front().number_of_locals;
@@ -372,6 +370,56 @@ void VM::run(const Program &program) {
                 array->data = data;
                 array->data[array->size++] = val;
                 pushPointer(array);
+            } break;
+            case Instruction::LoadLib: {
+                auto libPath = (StringObject *) popPointer();
+                auto handle = dlopen(libPath->chars, RTLD_LAZY);
+                if (handle == nullptr) {
+                    throw std::runtime_error("Object file not found: " + std::string(libPath->chars));
+                }
+                auto lib = new DynamicLibObject(libPath->chars, handle);
+                pushPointer(lib);
+                addObject(lib);
+            } break;
+            case Instruction::CallNative: {
+                auto dynamicLib = (DynamicLibObject *) popPointer();
+                auto funcInfo = (DynamicFunctionObject *) popPointer();
+                auto func = (NativeFunction) dlsym(dynamicLib->handle, funcInfo->name.c_str());
+                if (func == nullptr) {
+                    throw std::runtime_error(dlerror());
+                }
+                std::vector<uint64_t> args;
+                for (auto arg: funcInfo->arguments) {
+                    switch (arg->type) {
+                        case VariableType::Bool:
+                        case VariableType::I64: {
+                            auto val = popStack();
+                            args.push_back(val);
+                        } break;
+                        case VariableType::Array:
+                        case VariableType::Object: {
+                            auto val = popPointer();
+                            args.push_back(std::bit_cast<uint64_t>(val));
+                        } break;
+                        default:
+                            throw std::runtime_error("[VM::run] Invalid argument type!");
+                    }
+                }
+                auto returnValue = func({
+                        .argc = args.size(),
+                        .argv = args.data(),
+                });
+                switch (returnValue.type) {
+                    case ExternReturn::SPL_VOID:
+                        break;
+                    case ExternReturn::SPL_VALUE:
+                        pushStack(returnValue.value);
+                        break;
+                    case ExternReturn::SPL_OBJECT:
+                        pushPointer(std::bit_cast<Object *>(returnValue.value));
+                        addObject(std::bit_cast<Object *>(returnValue.value));
+                        break;
+                }
             } break;
             case Instruction::Exit:
                 return;

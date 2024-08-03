@@ -1,0 +1,4 @@
+export define lib = native("./testlib.so");
+export define nativeHelloWorld : function() -> void = {
+    lib("hello_world", []);
+}

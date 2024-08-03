@@ -1,8 +1,10 @@
 #pragma once
 
+#include "spl.h"
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <dlfcn.h>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -42,6 +44,8 @@ struct Instruction {
         Call,
         JumpIfFalse,
         Jump,
+        LoadLib,
+        CallNative,
         Exit
     } type{};
     union {
@@ -59,7 +63,8 @@ struct VariableType {
         I64,
         Object,
         Array,
-        Function
+        Function,
+        NativeLib,
     } type;
     explicit VariableType(Type type) : type(type){};
 };
@@ -79,13 +84,13 @@ struct Object {
         Invalid = 0,
         String,
         Array,
+        DynamicLib,
     } objType;
     Object() : objType(Type::Invalid){};
     virtual ~Object() = default;
     explicit Object(Type type) : objType(type){};
     bool marked = false;
 };
-
 struct StringObject : public Object {
     size_t length;
     char *chars;
@@ -125,6 +130,22 @@ struct ArrayObject : public Object {
         }
         return true;
     }
+};
+struct DynamicLibObject : public Object {
+    void *handle;
+    char *dlPath;
+    explicit DynamicLibObject(char *dlPath, void *handle)
+        : Object(Object::Type::DynamicLib), dlPath(dlPath), handle(handle){};
+    ~DynamicLibObject() override {
+        dlclose(handle);
+    }
+};
+struct DynamicFunctionObject : public Object {
+    std::string name;
+    std::vector<VariableType *> arguments;
+    explicit DynamicFunctionObject(std::string name, std::vector<VariableType *> arguments)
+        : name(std::move(name)), arguments(std::move(arguments)){};
+    ~DynamicFunctionObject() override = default;
 };
 
 struct Variable {

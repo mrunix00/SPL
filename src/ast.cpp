@@ -366,6 +366,31 @@ bool FunctionCall::operator==(const AbstractSyntaxTree &other) const {
     return identifier == otherFunctionCall.identifier;
 }
 void FunctionCall::compile(Program &program, Segment &segment) const {
+    if (identifier.token.value == "native") {
+        arguments.front()->compile(program, segment);
+        return segment.instructions.push_back({.type = Instruction::LoadLib});
+    }
+    VariableType *varType = nullptr;
+    if (segment.find_local(identifier.token.value) != -1) {
+        varType = segment.locals[identifier.token.value].type;
+    } else if (segment.find_local(identifier.token.value) != -1) {
+        varType = program.segments.front().locals[identifier.token.value].type;
+    }
+    if (varType != nullptr && varType->type == VariableType::NativeLib) {
+        std::vector<VariableType *> funcArgs;
+        auto argName = (Node *) arguments[0];
+        auto argList = (List *) arguments[1];
+        for (auto arg: argList->elements) {
+            // TODO
+        }
+        segment.instructions.push_back({
+                .type = Instruction::LoadObject,
+                .params = {.ptr = new DynamicFunctionObject(argName->token.value, funcArgs)},
+        });
+        emitLoad(program, segment, identifier.token.value);
+        segment.instructions.push_back({.type = Instruction::InstructionType::CallNative});
+        return;
+    }
     auto function = program.find_function(segment, identifier.token.value);
     auto functionType = (FunctionType *) function.type;
     for (int i = 0; i < arguments.size(); i++) {
@@ -624,18 +649,18 @@ bool ImportStatement::operator==(const AbstractSyntaxTree &other) const {
     return otherImportStatement.path == path;
 }
 void ImportStatement::compile(Program &program, Segment &segment) const {
-   std::ifstream importedFile(path);
-   if (!importedFile.is_open()) {
-       throw std::runtime_error("Unable to open file: " + path);
-   }
-   std::stringstream fileContent;
-   fileContent << importedFile.rdbuf();
-   auto statements = parse(fileContent.str().c_str());
-   for (auto stm : statements) {
-       if(stm->nodeType == AbstractSyntaxTree::Type::ExportStatement)
-           stm->compile(program, segment);
-       delete stm;
-   }
+    std::ifstream importedFile(path);
+    if (!importedFile.is_open()) {
+        throw std::runtime_error("Unable to open file: " + path);
+    }
+    std::stringstream fileContent;
+    fileContent << importedFile.rdbuf();
+    auto statements = parse(fileContent.str().c_str());
+    for (auto stm: statements) {
+        if (stm->nodeType == AbstractSyntaxTree::Type::ExportStatement)
+            stm->compile(program, segment);
+        delete stm;
+    }
 }
 
 ExportStatement::ExportStatement(AbstractSyntaxTree *stm)

@@ -86,6 +86,9 @@ VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree 
         }
         case AbstractSyntaxTree::Type::FunctionCall: {
             auto call = dynamic_cast<FunctionCall *>(ast);
+            if (call->identifier.token.value == "native") {
+                return new VariableType(VariableType::NativeLib);
+            }
             auto function = program.find_function(segment, call->identifier.token.value);
             return new VariableType(((FunctionType *) function.type)->returnType->type);
         }
@@ -105,7 +108,7 @@ VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree 
             else
                 throw std::runtime_error("Identifier not found: " + arrayAccess->identifier.token.value);
             auto type = (ArrayObjectType *) (isLocal ? segment.locals[arrayAccess->identifier.token.value].type
-                        : program.segments[0].locals[arrayAccess->identifier.token.value].type);
+                                                     : program.segments[0].locals[arrayAccess->identifier.token.value].type);
             return type->elementType;
         } break;
         default:

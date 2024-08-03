@@ -38,8 +38,7 @@ flex_target(lexer src/lexer.l "${LEXER_OUT}" DEFINES_FILE ${LEXER_DIR}/lexer.h)
 bison_target(parser src/parser.y "${PARSER_OUT}" DEFINES_FILE ${PARSER_DIR}/parser.h)
 add_flex_bison_dependency(lexer parser)
 
-add_executable(SPL main.cpp ${SOURCES} ${LEXER_OUT} ${PARSER_OUT}
-        src/utils.cpp)
+add_executable(SPL main.cpp ${SOURCES} ${LEXER_OUT} ${PARSER_OUT})
 add_executable(tests ${TEST_SOURCES} ${SOURCES} ${LEXER_OUT} ${PARSER_OUT})
 target_link_libraries(SPL linenoise)
 target_link_libraries(tests GTest::gtest_main GTest::gmock_main)

@@ -568,3 +568,22 @@ TEST(ParserTests, ExportStatement) {
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
 }
+
+TEST(ParserTests, TurnaryExpressions) {
+    const char *input = "x == 0 ? 1 : 0;";
+    auto expectedResult = std::vector<AbstractSyntaxTree *>({
+            new TernaryExpression(
+                    new BinaryExpression(
+                            new Node({Identifier, "x"}),
+                            new Node({Number, "0"}),
+                            {Equal, "=="}),
+                    new Node({Number, "1"}),
+                    new Node({Number, "0"})
+            ),
+    });
+
+    auto actualResult = parse(input);
+    ASSERT_EQ(expectedResult.size(), actualResult.size());
+    for (int i = 0; i < expectedResult.size(); i++)
+        ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+}

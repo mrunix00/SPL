@@ -91,7 +91,7 @@ TEST(Lexer, BooleanOperators) {
 }
 
 TEST(Lexer, Symbols) {
-    auto actual = lex(":;(){}[]->");
+    auto actual = lex(":;(){}[]->?");
     std::vector<Token> expected = {
             {Colon, ":"},
             {Semicolon, ";"},
@@ -102,6 +102,7 @@ TEST(Lexer, Symbols) {
             {LBracket, "["},
             {RBracket, "]"},
             {Arrow, "->"},
+            {QuestionMark, "?"},
             {YYEOF},
     };
     TEST_LEX(actual, expected)

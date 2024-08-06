@@ -679,6 +679,39 @@ void ExportStatement::compile(Program &program, Segment &segment) const {
     stm->compile(program, segment);
 }
 
+TernaryExpression::TernaryExpression(
+        AbstractSyntaxTree *condition,
+        AbstractSyntaxTree *thenCase,
+        AbstractSyntaxTree *elseCase)
+: condition(condition), thenCase(thenCase), elseCase(elseCase) {
+    nodeType = AbstractSyntaxTree::Type::TernaryExpression;
+    typeStr = "TernaryExpression";
+}
+bool TernaryExpression::operator==(AbstractSyntaxTree const &other) const {
+    if (nodeType != other.nodeType) return false;
+    auto &otherTernaryExpression = dynamic_cast<const TernaryExpression &>(other);
+    return *condition == *otherTernaryExpression.condition &&
+           *thenCase == *otherTernaryExpression.thenCase &&
+           *elseCase == *otherTernaryExpression.elseCase;
+}
+void TernaryExpression::compile(Program &program, Segment &segment) const {
+    assert(deduceType(program, segment, condition)->type == VariableType::Bool,
+           "[TernaryExpression::compile] Condition must be a boolean!");
+    assert(deduceType(program, segment, thenCase)->type == deduceType(program, segment, elseCase)->type,
+           "[TernaryExpression::compile] Then and else cases must have the same type!");
+    assert(deduceType(program, segment, thenCase)->type != VariableType::Void,
+           "[TernaryExpression::compile] Then and else cases must not be void!");
+    condition->compile(program, segment);
+    size_t jumpIndex = segment.instructions.size();
+    segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::JumpIfFalse});
+    thenCase->compile(program, segment);
+    size_t jumpIndex2 = segment.instructions.size();
+    segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::Jump});
+    segment.instructions[jumpIndex].params.index = segment.instructions.size();
+    elseCase->compile(program, segment);
+    segment.instructions[jumpIndex2].params.index = segment.instructions.size();
+}
+
 void compile(Program &program, const char *input) {
     auto ast = parse(input);
     if (!program.segments.empty() &&

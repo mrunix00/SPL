@@ -265,3 +265,12 @@ TEST(VM, VoidReturnType) {
     vm.run(program);
     ASSERT_EQ(vm.topStack(), 42);
 }
+
+TEST(VM, TernaryExpressions) {
+    const char *input = "define fib : function(n: int) -> int = { return n < 2 ? n : fib(n - 1) + fib(n - 2); };"
+                        "fib(10);";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(vm.topStack(), 55);
+}

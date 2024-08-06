@@ -41,7 +41,7 @@
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define Function If Else While For Return
 %token Void Int UInt F64 Bool True False Str
-%token Colon Comma Semicolon Arrow Newline
+%token Colon Comma Semicolon Arrow Newline QuestionMark
 %token LParen RParen LBrace RBrace LBracket RBracket
 %token Import Export
 
@@ -50,8 +50,11 @@
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
 %type <ast> List Elements ArrayType ArrayAccess
 
+%right QuestionMark Colon
+%left Equal NotEqual
+%left Less Greater LessEqual GreaterEqual
 %left Plus Minus
-%left Multiply Divide
+%left Multiply Divide Modulo
 
 %%
 
@@ -293,6 +296,9 @@ Expression:
     }
     | Expression DecrementAssign Expression {
         $$ = new BinaryExpression(static_cast<AbstractSyntaxTree*>($1), static_cast<AbstractSyntaxTree*>($3), {DecrementAssign, "-="});
+    }
+    | Expression QuestionMark Expression Colon Expression {
+        $$ = new TernaryExpression(static_cast<AbstractSyntaxTree*>($1), static_cast<AbstractSyntaxTree*>($3), static_cast<AbstractSyntaxTree*>($5));
     }
 ;
 %%

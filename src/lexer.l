@@ -43,6 +43,7 @@
 "&&"                        { return And; }
 "||"                        { return Or; }
 "!"                         { return Not; }
+"?"                         { return QuestionMark; }
 "define"                    { return Define; }
 "function"                  { return Function; }
 "if"                        { return If; }

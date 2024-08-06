@@ -84,6 +84,11 @@ VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree 
             auto right = deduceType(program, segment, binaryExpr->right);
             return new VariableType(biggestType(left->type, right->type));
         }
+        case AbstractSyntaxTree::Type::TernaryExpression: {
+            auto ternary = dynamic_cast<TernaryExpression *>(ast);
+            auto type = deduceType(program, segment, ternary->thenCase);
+            return type;
+        }
         case AbstractSyntaxTree::Type::FunctionCall: {
             auto call = dynamic_cast<FunctionCall *>(ast);
             if (call->identifier.token.value == "native") {

@@ -27,6 +27,7 @@ struct AbstractSyntaxTree {
         ArrayAccess,
         ImportStatement,
         ExportStatement,
+        TernaryExpression,
     } nodeType{Type::Invalid};
     virtual ~AbstractSyntaxTree() = default;
     virtual bool operator==(const AbstractSyntaxTree &other) const = 0;
@@ -172,6 +173,15 @@ struct ImportStatement : public AbstractSyntaxTree {
 struct ExportStatement : public AbstractSyntaxTree {
     AbstractSyntaxTree *stm;
     explicit ExportStatement(AbstractSyntaxTree *stm);
+    bool operator==(const AbstractSyntaxTree &other) const override;
+    void compile(Program &program, Segment &segment) const override;
+};
+
+struct TernaryExpression : public AbstractSyntaxTree {
+    AbstractSyntaxTree *condition;
+    AbstractSyntaxTree *thenCase;
+    AbstractSyntaxTree *elseCase;
+    TernaryExpression(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenCase, AbstractSyntaxTree *elseCase);
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };

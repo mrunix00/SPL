@@ -16,7 +16,7 @@ bool Node::operator==(const AbstractSyntaxTree &other) const {
 void Node::compile(Program &program, Segment &segment) const {
     switch (token.type) {
         case String: {
-            auto string = new StringObject(token.value.size(), (char *) token.value.c_str());
+            auto string = new StringObject(token.value.size(), strdup(token.value.c_str()));
             segment.instructions.push_back(
                     Instruction{
                             .type = Instruction::InstructionType::LoadObject,

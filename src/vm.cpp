@@ -63,6 +63,11 @@ VM::VM() {
 }
 VM::~VM() {
     free(stack);
+    if (pointersStack == nullptr)
+        return;
+    for (auto i = 0; i < pointersStackSize; i++)
+        delete pointersStack[i];
+    free(pointersStack);
 }
 inline void VM::newStackFrame(const Segment &segment) {
     uint64_t *locals{};

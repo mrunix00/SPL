@@ -4,6 +4,11 @@
 #include "ast.h"
 #include "parser.h"
 
+static void deleteAST(std::vector<AbstractSyntaxTree *> &ast) {
+    for (auto &node : ast)
+        delete node;
+}
+
 TEST(ParserTests, SimpleBinaryExpression) {
     const char *input = "1 + 2;";
     auto expectedResult = std::vector<AbstractSyntaxTree *>{
@@ -17,6 +22,8 @@ TEST(ParserTests, SimpleBinaryExpression) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, CompoundBinaryExpression) {
@@ -35,6 +42,8 @@ TEST(ParserTests, CompoundBinaryExpression) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, ParseStrings) {
@@ -49,6 +58,8 @@ TEST(ParserTests, ParseStrings) {
 
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     ASSERT_EQ(*expectedResult[0], *actualResult[0]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, MultipleExpressions) {
@@ -72,6 +83,8 @@ TEST(ParserTests, MultipleExpressions) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, OperationsPriority) {
@@ -90,6 +103,8 @@ TEST(ParserTests, OperationsPriority) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, Declaration) {
@@ -104,6 +119,8 @@ TEST(ParserTests, Declaration) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, DeclarationWithInitialization) {
@@ -119,6 +136,8 @@ TEST(ParserTests, DeclarationWithInitialization) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, DeclarationWithAutoTypeDeduction) {
@@ -133,6 +152,8 @@ TEST(ParserTests, DeclarationWithAutoTypeDeduction) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, VariableAssignment) {
@@ -148,6 +169,8 @@ TEST(ParserTests, VariableAssignment) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, FunctionDeclaration) {
@@ -169,6 +192,8 @@ TEST(ParserTests, FunctionDeclaration) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, FunctionDeclarationWithBody) {
@@ -200,6 +225,8 @@ TEST(ParserTests, FunctionDeclarationWithBody) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, FunctionDeclarationWithBodyWithMultipleExpressions) {
@@ -236,6 +263,8 @@ TEST(ParserTests, FunctionDeclarationWithBodyWithMultipleExpressions) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, FunctionDeclarationWithAutoTypeDeduction) {
@@ -268,6 +297,8 @@ TEST(ParserTests, FunctionDeclarationWithAutoTypeDeduction) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, FunctionCall) {
@@ -282,6 +313,8 @@ TEST(ParserTests, FunctionCall) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, FunctionCallWithArgument) {
@@ -298,6 +331,8 @@ TEST(ParserTests, FunctionCallWithArgument) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, FunctionCallWithMultipleArguments) {
@@ -315,6 +350,8 @@ TEST(ParserTests, FunctionCallWithMultipleArguments) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, IfStatement) {
@@ -333,6 +370,8 @@ TEST(ParserTests, IfStatement) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, IfElseStatement) {
@@ -356,6 +395,8 @@ TEST(ParserTests, IfElseStatement) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, WhileStatement) {
@@ -374,6 +415,8 @@ TEST(ParserTests, WhileStatement) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, ForLoop) {
@@ -403,6 +446,8 @@ TEST(ParserTests, ForLoop) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, UnaryExpression) {
@@ -433,6 +478,8 @@ TEST(ParserTests, UnaryExpression) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, List) {
@@ -449,6 +496,8 @@ TEST(ParserTests, List) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, ArrayDeclaration) {
@@ -466,6 +515,8 @@ TEST(ParserTests, ArrayDeclaration) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, ArrayAccess) {
@@ -480,6 +531,8 @@ TEST(ParserTests, ArrayAccess) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, NestedScopes) {
@@ -534,6 +587,8 @@ TEST(ParserTests, NestedScopes) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, ImportStatement) {
@@ -546,6 +601,8 @@ TEST(ParserTests, ImportStatement) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, ExportStatement) {
@@ -567,6 +624,8 @@ TEST(ParserTests, ExportStatement) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }
 
 TEST(ParserTests, TurnaryExpressions) {
@@ -586,4 +645,6 @@ TEST(ParserTests, TurnaryExpressions) {
     ASSERT_EQ(expectedResult.size(), actualResult.size());
     for (int i = 0; i < expectedResult.size(); i++)
         ASSERT_EQ(*expectedResult[i], *actualResult[i]);
+    deleteAST(actualResult);
+    deleteAST(expectedResult);
 }

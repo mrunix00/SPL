@@ -51,6 +51,10 @@ struct BinaryExpression final : public AbstractSyntaxTree {
     AbstractSyntaxTree *right{};
     Token op;
     BinaryExpression(AbstractSyntaxTree *left, AbstractSyntaxTree *right, Token op);
+    ~BinaryExpression() override {
+        delete left;
+        delete right;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -63,6 +67,9 @@ struct UnaryExpression final : public AbstractSyntaxTree {
     AbstractSyntaxTree *expression;
     Token op;
     UnaryExpression(AbstractSyntaxTree *expression, Token op, Side side);
+    ~UnaryExpression() override {
+        delete expression;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -74,6 +81,10 @@ struct Declaration final : public AbstractSyntaxTree {
     Declaration(AbstractSyntaxTree *type, Node identifier, AbstractSyntaxTree *value);
     Declaration(AbstractSyntaxTree *type, Node identifier);
     Declaration(Node identifier, AbstractSyntaxTree *value);
+    ~Declaration() override {
+        if (type.has_value()) delete type.value();
+        if (value.has_value()) delete value.value();
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -81,6 +92,10 @@ struct Declaration final : public AbstractSyntaxTree {
 struct ScopedBody : public AbstractSyntaxTree {
     std::vector<AbstractSyntaxTree *> body;
     explicit ScopedBody(const std::vector<AbstractSyntaxTree *> &body);
+    ~ScopedBody() override {
+        for (auto &node : body)
+            delete node;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -89,12 +104,20 @@ struct FunctionDeclaration : public AbstractSyntaxTree {
     AbstractSyntaxTree *returnType;
     std::vector<Declaration *> arguments;
     FunctionDeclaration(AbstractSyntaxTree *returnType, const std::vector<Declaration *> &arguments);
+    ~FunctionDeclaration() override {
+        delete returnType;
+        for (auto &arg : arguments)
+            delete arg;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
 };
 
 struct ReturnStatement : public AbstractSyntaxTree {
     AbstractSyntaxTree *expression;
     explicit ReturnStatement(AbstractSyntaxTree *expression);
+    ~ReturnStatement() override {
+        delete expression;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -103,6 +126,10 @@ struct TypeCast : public AbstractSyntaxTree {
     AbstractSyntaxTree *expression;
     AbstractSyntaxTree *type;
     TypeCast(AbstractSyntaxTree *expression, AbstractSyntaxTree *type);
+    ~TypeCast() override {
+        delete expression;
+        delete type;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
 };
 
@@ -110,6 +137,10 @@ struct FunctionCall : public AbstractSyntaxTree {
     Node identifier;
     std::vector<AbstractSyntaxTree *> arguments;
     FunctionCall(Node identifier, const std::vector<AbstractSyntaxTree *> &arguments);
+    ~FunctionCall() override {
+        for (auto &arg : arguments)
+            delete arg;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -120,6 +151,11 @@ struct IfStatement : public AbstractSyntaxTree {
     std::optional<AbstractSyntaxTree *> elseBody;
     IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody, AbstractSyntaxTree *elseBody);
     IfStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenBody);
+    ~IfStatement() override {
+        delete condition;
+        delete thenBody;
+        if (elseBody.has_value()) delete elseBody.value();
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -128,6 +164,10 @@ struct WhileStatement : public AbstractSyntaxTree {
     AbstractSyntaxTree *condition;
     AbstractSyntaxTree *body;
     WhileStatement(AbstractSyntaxTree *condition, AbstractSyntaxTree *body);
+    ~WhileStatement() override {
+        delete condition;
+        delete body;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -138,6 +178,12 @@ struct ForLoop : public AbstractSyntaxTree {
     AbstractSyntaxTree *step;
     AbstractSyntaxTree *body;
     ForLoop(AbstractSyntaxTree *initialization, AbstractSyntaxTree *condition, AbstractSyntaxTree *step, AbstractSyntaxTree *body);
+    ~ForLoop() override {
+        delete initialization;
+        delete condition;
+        delete step;
+        delete body;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -145,6 +191,10 @@ struct ForLoop : public AbstractSyntaxTree {
 struct List : public AbstractSyntaxTree {
     std::vector<AbstractSyntaxTree *> elements;
     explicit List(const std::vector<AbstractSyntaxTree *> &elements);
+    ~List() override {
+        for (auto &element : elements)
+            delete element;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -152,6 +202,9 @@ struct List : public AbstractSyntaxTree {
 struct ArrayType : public AbstractSyntaxTree {
     AbstractSyntaxTree *type;
     explicit ArrayType(AbstractSyntaxTree *type);
+    ~ArrayType() override {
+        delete type;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
 };
 
@@ -159,6 +212,9 @@ struct ArrayAccess : public AbstractSyntaxTree {
     Node identifier;
     AbstractSyntaxTree *index;
     ArrayAccess(Node identifier, AbstractSyntaxTree *index);
+    ~ArrayAccess() override {
+        delete index;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -173,6 +229,9 @@ struct ImportStatement : public AbstractSyntaxTree {
 struct ExportStatement : public AbstractSyntaxTree {
     AbstractSyntaxTree *stm;
     explicit ExportStatement(AbstractSyntaxTree *stm);
+    ~ExportStatement() override {
+        delete stm;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };
@@ -182,6 +241,11 @@ struct TernaryExpression : public AbstractSyntaxTree {
     AbstractSyntaxTree *thenCase;
     AbstractSyntaxTree *elseCase;
     TernaryExpression(AbstractSyntaxTree *condition, AbstractSyntaxTree *thenCase, AbstractSyntaxTree *elseCase);
+    ~TernaryExpression() override {
+        delete condition;
+        delete thenCase;
+        delete elseCase;
+    }
     bool operator==(const AbstractSyntaxTree &other) const override;
     void compile(Program &program, Segment &segment) const override;
 };

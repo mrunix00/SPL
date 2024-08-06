@@ -721,6 +721,7 @@ void compile(Program &program, const char *input) {
     }
     for (auto &node: ast) {
         node->compile(program, program.segments[0]);
+        delete node;
     }
     program.segments.front().instructions.push_back(
             Instruction{

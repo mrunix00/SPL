@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <utility>
+#include <memory>
 
 Node::Node(Token token) : token(std::move(token)) {
     nodeType = Type::Node;
@@ -207,7 +208,10 @@ void Declaration::compile(Program &program, Segment &segment) const {
                                 .params = {.i64 = convert<int64_t>(((Node *) value.value())->token.value)},
                         });
                     } else {
-                        ((Node *) value.value())->compile(program, segment);
+                        auto from = std::unique_ptr<VariableType>(deduceType(program, segment, value.value()));
+                        auto to = std::unique_ptr<VariableType>(varTypeConvert(type.value()));
+                        value.value()->compile(program, segment);
+                        typeCast(segment.instructions, from->type, to->type);
                     }
                     segment.declare_variable(identifier.token.value, new VariableType(VariableType::Type::I64));
                     segment.instructions.push_back({

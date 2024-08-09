@@ -34,6 +34,11 @@
                                            : Instruction::InstructionType::OPERATION##GlobalI64;            \
                 instruction.params.index = id;                                                              \
                 break;                                                                                      \
+            case VariableType::Type::F64:                                                                   \
+                instruction.type = isLocal ? Instruction::InstructionType::OPERATION##LocalF64              \
+                                           : Instruction::InstructionType::OPERATION##GlobalF64;            \
+                instruction.params.index = id;                                                              \
+                break;                                                                                      \
             default:                                                                                        \
                 throw std::runtime_error("[Node::compile] Invalid variable type!");                         \
         }                                                                                                   \
@@ -45,6 +50,10 @@ GENERATE_EMIT_FUNCTION(Store)
 template<typename T>
 inline T convert(const std::string &value) {
     return static_cast<T>(std::stoll(value));
+}
+template<>
+inline double convert<double>(const std::string &value) {
+    return static_cast<double>(std::stod(value));
 }
 template<>
 inline uint32_t convert<uint32_t>(const std::string &value) {

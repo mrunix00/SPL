@@ -16,6 +16,9 @@ void printTopStack(const VM &vm, const Program &program) {
         case VariableType::I64: {
             std::cout << (int64_t) vm.topStack() << std::endl;
         } break;
+        case VariableType::F64: {
+            std::cout << std::bit_cast<double>(vm.topStack()) << std::endl;
+        } break;
         case VariableType::Object: {
             auto obj = vm.topPointer();
             if (obj->objType == Object::Type::String) {

@@ -274,3 +274,82 @@ TEST(VM, TernaryExpressions) {
     vm.run(program);
     ASSERT_EQ(vm.topStack(), 55);
 }
+
+TEST(VM, AddDecimalNumbers) {
+    const char *input = "1.5 + 2.5;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 4);
+}
+
+TEST(VM, SubtractDecimalNumbers) {
+    const char *input = "3.5 - 2.5;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 1);
+}
+
+TEST(VM, MultiplyDecimalNumbers) {
+    const char *input = "3.5 * 2.5;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 8.75);
+}
+
+TEST(VM, DivideDecimalNumbers) {
+    const char *input = "3.5 / 2.5;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 1.4);
+}
+
+TEST(VM, DeclareAFloatVariable) {
+    const char *input = "define a : float = 42.42;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 42.42);
+}
+
+TEST(VM, FloatVariableAssignment) {
+    const char *input = "define a : float = 42.42;"
+                        "a = 43.43;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 43.43);
+}
+
+TEST(VM, FloatIncrementUnaryOperator) {
+    const char *input = "define a : float = 42.42;"
+                        "a++;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 43.42);
+}
+
+TEST(VM, FloatDecrementUnaryOperator) {
+    const char *input = "define a : float = 42.42;"
+                        "a--;"
+                        "a;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 41.42);
+}
+
+TEST(VM, AddAFloatAndAnInteger) {
+    const char *input = "42.42 + 42;";
+    VM vm;
+    auto program = compile(input);
+    vm.run(program);
+    ASSERT_EQ(std::bit_cast<double>(vm.topStack()), 84.42);
+}

@@ -32,6 +32,15 @@ VariableType::Type biggestType(VariableType::Type first, VariableType::Type seco
     switch (first) {
         case VariableType::I64:
             switch (second) {
+                case VariableType::F64:
+                case VariableType::I64:
+                    return first;
+                default:
+                    throw std::runtime_error("Type mismatch!");
+            }
+        case VariableType::F64:
+            switch (second) {
+                case VariableType::F64:
                 case VariableType::I64:
                     return first;
                 default:
@@ -52,6 +61,8 @@ VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree 
                 case True:
                 case False:
                     return new VariableType(VariableType::Bool);
+                case DecimalNumber:
+                    return new VariableType(VariableType::F64);
                 case Number: {
                     try {
                         std::stol(token.value);
@@ -125,7 +136,9 @@ VariableType *deduceType(Program &program, Segment &segment, AbstractSyntaxTree 
     case GenericInstruction::INS: {                                                \
         switch (type) {                                                            \
             case VariableType::I64:                                                \
-                return {Instruction::InstructionType::INS##I64};                   \
+                return {Instruction::INS##I64};                                    \
+            case VariableType::F64:                                                \
+                return {Instruction::INS##F64};                                    \
             default:                                                               \
                 throw std::runtime_error("[getInstructionWithType] Invalid type"); \
         }                                                                          \
@@ -136,13 +149,20 @@ Instruction getInstructionWithType(GenericInstruction instruction, VariableType:
         TYPE_CASE(Sub)
         TYPE_CASE(Mul)
         TYPE_CASE(Div)
-        TYPE_CASE(Mod)
         TYPE_CASE(Equal)
         TYPE_CASE(Less)
         TYPE_CASE(Greater)
         TYPE_CASE(GreaterEqual)
         TYPE_CASE(LessEqual)
         TYPE_CASE(NotEqual)
+        case GenericInstruction::Mod: {
+            switch (type) {
+                case VariableType::I64:
+                    return {Instruction::ModI64};
+                default:
+                    throw std::runtime_error("[getInstructionWithType] Invalid type");
+            }
+        }
     }
 }
 
@@ -151,8 +171,13 @@ Instruction emitLoad(VariableType::Type type, const Token &token) {
         case VariableType::Bool:
         case VariableType::I64:
             return Instruction{
-                    .type = Instruction::InstructionType::LoadI64,
+                    .type = Instruction::LoadI64,
                     .params = {.i64 = std::stol(token.value)},
+            };
+        case VariableType::F64:
+            return Instruction{
+                    .type = Instruction::LoadF64,
+                    .params = {.f64 = std::stod(token.value)},
             };
         default:
             throw std::runtime_error("Invalid type: " + token.value);
@@ -163,61 +188,86 @@ void typeCast(std::vector<Instruction> &instructions, VariableType::Type from, V
     if (from == to)
         return;
     switch (from) {
+        case VariableType::I64:
+            switch (to) {
+                case VariableType::F64:
+                    instructions.push_back({Instruction::ConvertI64ToF64});
+                    break;
+                default:
+                    throw std::runtime_error("Invalid type cast");
+            }
+            break;
+        case VariableType::F64:
+            switch (to) {
+                case VariableType::I64:
+                    instructions.push_back({Instruction::ConvertF64ToI64});
+                    break;
+                default:
+                    throw std::runtime_error("Invalid type cast");
+            }
+            break;
         default:
             throw std::runtime_error("Invalid type cast");
     }
 }
 
+#define COND_CASE(TYPE)                   \
+    case Instruction::Equal##TYPE:        \
+    case Instruction::Less##TYPE:         \
+    case Instruction::Greater##TYPE:      \
+    case Instruction::GreaterEqual##TYPE: \
+    case Instruction::LessEqual##TYPE:    \
+    case Instruction::NotEqual##TYPE
+#define OP_CASE(TYPE)                    \
+    case Instruction::Load##TYPE:        \
+    case Instruction::Add##TYPE:         \
+    case Instruction::Sub##TYPE:         \
+    case Instruction::Mul##TYPE:         \
+    case Instruction::Div##TYPE:         \
+    case Instruction::Increment##TYPE:   \
+    case Instruction::Decrement##TYPE:   \
+    case Instruction::StoreLocal##TYPE:  \
+    case Instruction::StoreGlobal##TYPE: \
+    case Instruction::LoadLocal##TYPE:   \
+    case Instruction::LoadGlobal##TYPE
 VariableType::Type getInstructionType(const Program &program, const Instruction &instruction) {
     switch (instruction.type) {
-        case Instruction::InstructionType::EqualI64:
-        case Instruction::InstructionType::LessI64:
-        case Instruction::InstructionType::GreaterI64:
-        case Instruction::InstructionType::GreaterEqualI64:
-        case Instruction::InstructionType::LessEqualI64:
-        case Instruction::InstructionType::NotEqualI64:
+        COND_CASE(I64) : COND_CASE(F64) : {
             return VariableType::Bool;
-        case Instruction::InstructionType::LoadI64:
-        case Instruction::InstructionType::AddI64:
-        case Instruction::InstructionType::SubI64:
-        case Instruction::InstructionType::MulI64:
-        case Instruction::InstructionType::DivI64:
-        case Instruction::InstructionType::ModI64:
-        case Instruction::InstructionType::IncrementI64:
-        case Instruction::InstructionType::DecrementI64:
-        case Instruction::InstructionType::StoreLocalI64:
-        case Instruction::InstructionType::LoadLocalI64:
-        case Instruction::InstructionType::StoreGlobalI64:
-        case Instruction::InstructionType::LoadGlobalI64:
-            return VariableType::I64;
-        case Instruction::InstructionType::LoadObject:
-        case Instruction::InstructionType::StoreLocalObject:
-        case Instruction::InstructionType::LoadLocalObject:
-        case Instruction::InstructionType::StoreGlobalObject:
-        case Instruction::InstructionType::LoadGlobalObject:
-        case Instruction::InstructionType::MakeArray:
-            return VariableType::Object;
-        case Instruction::InstructionType::LoadFromLocalArray:
-        case Instruction::InstructionType::LoadFromGlobalArray: {
-            auto array_index = instruction.params.index;
-            auto locals = program.segments[0].locals;
-            for (auto &local: locals) {
-                if (local.second.index == array_index) {
-                    auto type = (ArrayObjectType *) local.second.type;
-                    return type->elementType->type;
-                }
-            }
-        } break;
-        case Instruction::InstructionType::Call: {
-            auto func_index = instruction.params.index;
-            auto function = program.segments[func_index];
-            return function.returnType->type;
         }
-        case Instruction::InstructionType::Jump:
-        case Instruction::InstructionType::JumpIfFalse:
-        case Instruction::InstructionType::Return:
-        case Instruction::InstructionType::Invalid:
-        case Instruction::InstructionType::Exit:
-            return VariableType::Invalid;
+    OP_CASE(F64) : case Instruction::ConvertI64ToF64:
+        return VariableType::F64;
+    OP_CASE(I64) : case Instruction::ModI64:
+    case Instruction::ConvertF64ToI64:
+        return VariableType::I64;
+    case Instruction::LoadObject:
+    case Instruction::StoreLocalObject:
+    case Instruction::LoadLocalObject:
+    case Instruction::StoreGlobalObject:
+    case Instruction::LoadGlobalObject:
+    case Instruction::MakeArray:
+        return VariableType::Object;
+    case Instruction::LoadFromLocalArray:
+    case Instruction::LoadFromGlobalArray: {
+        auto array_index = instruction.params.index;
+        auto locals = program.segments[0].locals;
+        for (auto &local: locals) {
+            if (local.second.index == array_index) {
+                auto type = (ArrayObjectType *) local.second.type;
+                return type->elementType->type;
+            }
+        }
+    } break;
+    case Instruction::Call: {
+        auto func_index = instruction.params.index;
+        auto function = program.segments[func_index];
+        return function.returnType->type;
+    }
+    case Instruction::Jump:
+    case Instruction::JumpIfFalse:
+    case Instruction::Return:
+    case Instruction::Invalid:
+    case Instruction::Exit:
+        return VariableType::Invalid;
     }
 }

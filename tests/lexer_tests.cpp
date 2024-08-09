@@ -37,6 +37,15 @@ TEST(Lexer, Number) {
     TEST_LEX(actual, expected)
 }
 
+TEST(Lexer, DecimalNumbers) {
+    auto actual = lex("42.42");
+    std::vector<Token> expected = {
+            {DecimalNumber, "42.42"},
+            {YYEOF},
+    };
+    TEST_LEX(actual, expected)
+}
+
 TEST(Lexer, Identifier) {
     auto actual = lex("foo");
     std::vector<Token> expected = {
@@ -111,7 +120,7 @@ TEST(Lexer, Symbols) {
 TEST(Lexer, Keywords) {
     auto actual = lex(
             "define if else while for return "
-            "void int uint str f64 bool true false "
+            "void int uint str float bool true false "
             "export import");
     std::vector<Token> expected = {
             {Define, "define"},
@@ -124,7 +133,7 @@ TEST(Lexer, Keywords) {
             {Int, "int"},
             {UInt, "uint"},
             {Str, "str"},
-            {F64, "f64"},
+            {Float, "float"},
             {Bool, "bool"},
             {True, "true"},
             {False, "false"},

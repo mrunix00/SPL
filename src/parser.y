@@ -40,12 +40,12 @@
 %token Increment Decrement IncrementAssign DecrementAssign
 %token Equal NotEqual Less Greater LessEqual GreaterEqual And Or Not
 %token Define Function If Else While For Return
-%token Void Int UInt F64 Bool True False Str
+%token Void Int UInt Float Bool True False Str
 %token Colon Comma Semicolon Arrow Newline QuestionMark
 %token LParen RParen LBrace RBrace LBracket RBracket
 %token Import Export
 
-%token <str> Number String Identifier
+%token <str> Number DecimalNumber String Identifier
 %type <ast> Expression Expressions VarType ScopedBody TypeCast FunctionCall IfStatement WhileStatement ForLoop
 %type <ast> ArgumentDeclaration ArgumentDeclarationsList Arguments FunctionDeclaration UnaryExpression
 %type <ast> List Elements ArrayType ArrayAccess
@@ -128,7 +128,7 @@ VarType:
     Void { $$ = new Node({Void, "void"}); }
     | Int  { $$ = new Node({Int, "int"}); }
     | UInt { $$ = new Node({UInt, "uint"}); }
-    | F64 { $$ = new Node({F64, "f64"}); }
+    | Float { $$ = new Node({Float, "float"}); }
     | Bool { $$ = new Node({Bool, "bool"}); }
     | Str { $$ = new Node({Str, "str"}); }
     | ArrayType { $$ = $1; }
@@ -228,6 +228,7 @@ Expression:
     | False { $$ = new Node({False, "false"}); }
     | True { $$ = new Node({True, "true"}); }
     | Number { $$ = new Node({Number, $1}); }
+    | DecimalNumber { $$ = new Node({DecimalNumber, $1}); }
     | String { $$ = new Node({String, $1}); }
     | FunctionDeclaration { $$ = $1; }
     | VarType { $$ = $1; }

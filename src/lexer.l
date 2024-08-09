@@ -11,6 +11,7 @@
 \/\/(.*)                    { /* ignore comments */ }
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* ignore multi-line comments */ }
 [0-9]+                      { yylval.str = strdup(yytext); return Number; }
+[0-9]+\.[0-9]+              { yylval.str = strdup(yytext); return DecimalNumber; }
 \"([^\\"]|\\.)*\"           {
     size_t len = yyleng - 2;
     char* str = (char*)malloc(len + 1);
@@ -54,7 +55,7 @@
 "void"                      { return Void; }
 "uint"                      { return UInt; }
 "int"                       { return Int; }
-"f64"                       { return F64; }
+"float"                     { return Float; }
 "bool"                      { return Bool; }
 "str"                       { return Str; }
 "true"                      { return True; }

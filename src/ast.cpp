@@ -23,6 +23,7 @@ void Node::compile(Program &program, Segment &segment) const {
                             .params = {.ptr = string},
                     });
         } break;
+        case DecimalNumber:
         case Number: {
             auto type = deduceType(program, segment, (AbstractSyntaxTree *) this);
             return segment.instructions.push_back(emitLoad(type->type, token));
@@ -211,6 +212,26 @@ void Declaration::compile(Program &program, Segment &segment) const {
                     segment.declare_variable(identifier.token.value, new VariableType(VariableType::Type::I64));
                     segment.instructions.push_back({
                             .type = segment.id == 0 ? Instruction::InstructionType::StoreGlobalI64 : Instruction::InstructionType::StoreLocalI64,
+                            .params = {.index = segment.find_local(identifier.token.value)},
+                    });
+                } break;
+                case Float: {
+                    if (!value.has_value()) {
+                        segment.instructions.push_back({
+                                .type = Instruction::InstructionType::LoadF64,
+                                .params = {.i64 = 0},
+                        });
+                    } else if (((Node *) value.value())->token.type == DecimalNumber) {
+                        segment.instructions.push_back({
+                                .type = Instruction::InstructionType::LoadF64,
+                                .params = {.f64 = convert<double>(((Node *) value.value())->token.value)},
+                        });
+                    } else {
+                        ((Node *) value.value())->compile(program, segment);
+                    }
+                    segment.declare_variable(identifier.token.value, new VariableType(VariableType::Type::F64));
+                    segment.instructions.push_back({
+                            .type = segment.id == 0 ? Instruction::InstructionType::StoreGlobalF64 : Instruction::InstructionType::StoreLocalF64,
                             .params = {.index = segment.find_local(identifier.token.value)},
                     });
                 } break;
@@ -507,6 +528,10 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
                     emitLoad(program, segment, node->token.value);
                     segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementI64});
                     break;
+                case VariableType::Type::F64:
+                    emitLoad(program, segment, node->token.value);
+                    segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::IncrementF64});
+                    break;
                 default:
                     throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");
             }
@@ -516,6 +541,10 @@ void UnaryExpression::compile(Program &program, Segment &segment) const {
                 case VariableType::Type::I64:
                     emitLoad(program, segment, node->token.value);
                     segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DecrementI64});
+                    break;
+                case VariableType::Type::F64:
+                    emitLoad(program, segment, node->token.value);
+                    segment.instructions.push_back(Instruction{.type = Instruction::InstructionType::DecrementF64});
                     break;
                 default:
                     throw std::runtime_error("[UnaryExpression::compile] Invalid varType!");
@@ -683,7 +712,7 @@ TernaryExpression::TernaryExpression(
         AbstractSyntaxTree *condition,
         AbstractSyntaxTree *thenCase,
         AbstractSyntaxTree *elseCase)
-: condition(condition), thenCase(thenCase), elseCase(elseCase) {
+    : condition(condition), thenCase(thenCase), elseCase(elseCase) {
     nodeType = AbstractSyntaxTree::Type::TernaryExpression;
     typeStr = "TernaryExpression";
 }

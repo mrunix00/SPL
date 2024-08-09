@@ -240,20 +240,40 @@ void VM::run(const Program &program) {
                 auto b = popStack();
                 pushStack(a + b);
             } break;
+            case Instruction::AddF64: {
+                auto a = std::bit_cast<double>(popStack());
+                auto b = std::bit_cast<double>(popStack());
+                pushStack(std::bit_cast<uint64_t>(a + b));
+            } break;
             case Instruction::SubI64: {
                 auto b = popStack();
                 auto a = popStack();
                 pushStack(a - b);
+            } break;
+            case Instruction::SubF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
+                pushStack(std::bit_cast<uint64_t>(a - b));
             } break;
             case Instruction::MulI64: {
                 auto b = popStack();
                 auto a = popStack();
                 pushStack(a * b);
             } break;
+            case Instruction::MulF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
+                pushStack(std::bit_cast<uint64_t>(a * b));
+            } break;
             case Instruction::DivI64: {
                 auto b = popStack();
                 auto a = popStack();
                 pushStack(a / b);
+            } break;
+            case Instruction::DivF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
+                pushStack(std::bit_cast<uint64_t>(a / b));
             } break;
             case Instruction::ModI64: {
                 auto b = popStack();
@@ -265,9 +285,19 @@ void VM::run(const Program &program) {
                 auto a = popStack();
                 pushStack(a > b);
             } break;
+            case Instruction::GreaterF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
+                pushStack(a > b);
+            } break;
             case Instruction::LessI64: {
                 auto b = popStack();
                 auto a = popStack();
+                pushStack(a < b);
+            } break;
+            case Instruction::LessF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
                 pushStack(a < b);
             } break;
             case Instruction::GreaterEqualI64: {
@@ -275,9 +305,19 @@ void VM::run(const Program &program) {
                 auto a = popStack();
                 pushStack(a >= b);
             } break;
+            case Instruction::GreaterEqualF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
+                pushStack(a >= b);
+            } break;
             case Instruction::LessEqualI64: {
                 auto b = popStack();
                 auto a = popStack();
+                pushStack(a <= b);
+            } break;
+            case Instruction::LessEqualF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
                 pushStack(a <= b);
             } break;
             case Instruction::EqualI64: {
@@ -285,53 +325,84 @@ void VM::run(const Program &program) {
                 auto a = popStack();
                 pushStack(a == b);
             } break;
+            case Instruction::EqualF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
+                pushStack(a == b);
+            } break;
             case Instruction::NotEqualI64: {
                 auto b = popStack();
                 auto a = popStack();
+                pushStack(a != b);
+            } break;
+            case Instruction::NotEqualF64: {
+                auto b = std::bit_cast<double>(popStack());
+                auto a = std::bit_cast<double>(popStack());
                 pushStack(a != b);
             } break;
             case Instruction::IncrementI64: {
                 auto val = popStack();
                 pushStack(val + 1);
             } break;
+            case Instruction::IncrementF64: {
+                auto val = std::bit_cast<double>(popStack());
+                pushStack(std::bit_cast<uint64_t>(val + 1));
+            } break;
             case Instruction::DecrementI64: {
                 auto val = popStack();
                 pushStack(val - 1);
+            } break;
+            case Instruction::DecrementF64: {
+                auto val = std::bit_cast<double>(popStack());
+                pushStack(std::bit_cast<uint64_t>(val - 1));
+            } break;
+            case Instruction::StoreGlobalF64:
+            case Instruction::StoreGlobalI64: {
+                auto val = popStack();
+                setGlobal(instruction.params.index, val);
+            } break;
+            case Instruction::StoreLocalF64:
+            case Instruction::StoreLocalI64: {
+                auto val = popStack();
+                setLocal(instruction.params.index, val);
+            } break;
+            case Instruction::LoadGlobalF64:
+            case Instruction::LoadGlobalI64: {
+                auto val = getGlobal(instruction.params.index);
+                pushStack(val);
+            } break;
+            case Instruction::LoadLocalF64:
+            case Instruction::LoadLocalI64: {
+                auto val = getLocal(instruction.params.index);
+                pushStack(val);
+            } break;
+            case Instruction::LoadF64:
+            case Instruction::LoadI64: {
+                pushStack(instruction.params.i64);
+            } break;
+            case Instruction::ConvertF64ToI64: {
+                auto val = (int64_t) std::bit_cast<double>(popStack());
+                pushStack(val);
+            } break;
+            case Instruction::ConvertI64ToF64: {
+                auto val = (double) static_cast<int64_t>(popStack());
+                pushStack(std::bit_cast<uint64_t>(val));
             } break;
             case Instruction::StoreGlobalObject: {
                 auto val = popPointer();
                 setGlobalPointer(instruction.params.index, val);
             } break;
-            case Instruction::StoreGlobalI64: {
-                auto val = popStack();
-                setGlobal(instruction.params.index, val);
-            } break;
             case Instruction::StoreLocalObject: {
                 auto val = popPointer();
                 setPointer(instruction.params.index, val);
-            } break;
-            case Instruction::StoreLocalI64: {
-                auto val = popStack();
-                setLocal(instruction.params.index, val);
-            } break;
-            case Instruction::LoadI64: {
-                pushStack(instruction.params.i64);
             } break;
             case Instruction::LoadGlobalObject: {
                 auto val = getGlobalPointer(instruction.params.index);
                 pushPointer(val);
             } break;
-            case Instruction::LoadGlobalI64: {
-                auto val = getGlobal(instruction.params.index);
-                pushStack(val);
-            } break;
             case Instruction::LoadLocalObject: {
                 auto val = getPointer(instruction.params.index);
                 pushPointer(val);
-            } break;
-            case Instruction::LoadLocalI64: {
-                auto val = getLocal(instruction.params.index);
-                pushStack(val);
             } break;
             case Instruction::LoadObject: {
                 pushPointer((Object *) instruction.params.ptr);

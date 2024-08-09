@@ -10,31 +10,36 @@
 #include <utility>
 #include <vector>
 
+#define OP_TYPE_INSTRUCTION(TYPE) \
+    Add##TYPE,                    \
+            Sub##TYPE,            \
+            Mul##TYPE,            \
+            Div##TYPE,            \
+            Greater##TYPE,        \
+            GreaterEqual##TYPE,   \
+            Less##TYPE,           \
+            LessEqual##TYPE,      \
+            Equal##TYPE,          \
+            NotEqual##TYPE,       \
+            Increment##TYPE,      \
+            Decrement##TYPE,      \
+            StoreGlobal##TYPE,    \
+            StoreLocal##TYPE,     \
+            Load##TYPE,           \
+            LoadLocal##TYPE,      \
+            LoadGlobal##TYPE
 struct Instruction {
     enum InstructionType : uint8_t {
         Invalid = 0,
-        AddI64,
-        SubI64,
-        MulI64,
-        DivI64,
+        OP_TYPE_INSTRUCTION(I64),
         ModI64,
-        GreaterI64,
-        LessI64,
-        GreaterEqualI64,
-        LessEqualI64,
-        EqualI64,
-        NotEqualI64,
-        IncrementI64,
-        DecrementI64,
-        StoreGlobalI64,
+        OP_TYPE_INSTRUCTION(F64),
+        ConvertI64ToF64,
+        ConvertF64ToI64,
         StoreGlobalObject,
-        StoreLocalI64,
         StoreLocalObject,
-        LoadI64,
         LoadObject,
-        LoadGlobalI64,
         LoadGlobalObject,
-        LoadLocalI64,
         LoadLocalObject,
         MakeArray,
         LoadFromLocalArray,
@@ -52,6 +57,7 @@ struct Instruction {
         void *ptr;
         size_t index;
         int64_t i64;
+        double f64;
     } params{};
 };
 
@@ -61,6 +67,7 @@ struct VariableType {
         Void,
         Bool,
         I64,
+        F64,
         Object,
         Array,
         Function,
